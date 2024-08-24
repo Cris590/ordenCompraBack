@@ -1,0 +1,15 @@
+import dotenv from 'dotenv';
+import express from 'express';
+import * as productoService from '../services/producto';
+
+dotenv.config();
+
+export const router = express.Router();
+
+router.get('/obtener', productoService.obtenerProductos);
+router.get('/detalle/:codProducto', productoService.obtenerProductoEditar);
+
+router.get('/info_basica/:codProducto', productoService.obtenerInfoBasicaProducto);
+router.post('/cargar_imagen_producto', productoService.cargarImagenProducto);
+router.get('/obtener_colores_producto/:cod_producto', productoService.obtenerColoresProducto);
+router.get('/obtener_imagenes_colores/:cod_producto_color', productoService.obtenerImagenesColoresProducto);
