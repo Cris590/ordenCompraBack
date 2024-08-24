@@ -13,3 +13,10 @@ router.get('/info_basica/:codProducto', productoService.obtenerInfoBasicaProduct
 router.post('/cargar_imagen_producto', productoService.cargarImagenProducto);
 router.get('/obtener_colores_producto/:cod_producto', productoService.obtenerColoresProducto);
 router.get('/obtener_imagenes_colores/:cod_producto_color', productoService.obtenerImagenesColoresProducto);
+
+
+router.post('/borrar_imagen_producto', productoService.borrarImagenProducto);
+
+router.post('/crear_color_producto', productoService.crearColorProducto);
+router.post('/editar_color_producto/:cod_producto_color', productoService.editarColorProducto);
+router.delete('/borrar_color_producto/:cod_producto_color', productoService.borrarColorProducto);

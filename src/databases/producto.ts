@@ -49,3 +49,19 @@ export const getInfoBasicaProducto = (codProducto:string): Promise<IProductoResu
 export const insertarImagenProductoColor = async (data: { url:string, cod_producto_color:string }) => {
   return db('producto_color_imagen').insert(data);
 }
+
+export const borrarImagenProductoColor = async ( codProductoColorImagen:number ) => {
+  return await db.delete().from('producto_color_imagen').where('cod_producto_color_imagen', codProductoColorImagen)
+}
+
+export const insertarProductoColor = async (data: { cod_producto:string, color:string, color_descripcion:string }) => {
+  return db('producto_color').insert(data);
+}
+
+export const editarProductoColor = async (data: { cod_producto:string, color:string, color_descripcion:string } , codProductoColor:number) => {
+  return await db('producto_color').where('cod_producto_color',codProductoColor).update(data)
+}
+
+export const borrarProductoColor = async ( codProductoColor:number ) => {
+  return await db.delete().from('producto_color').where('cod_producto_color', codProductoColor)
+}

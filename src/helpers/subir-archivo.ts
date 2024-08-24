@@ -26,7 +26,7 @@ export const subirArchivo = async (file: fileUpload.UploadedFile, nombreCarpeta:
                 error: 1,
                 nombre: '',
                 msg: {
-                    type: 'error',
+                    icon: 'error',
                     message: 'La Extensión de uno de los archivos no es válida'
                 }
             }
@@ -60,19 +60,12 @@ export const subirArchivo = async (file: fileUpload.UploadedFile, nombreCarpeta:
             nombre: uploadResult.secure_url
         }
 
-
-
-
-        return {
-            error: 1,
-        }
-
     } catch (e) {
         return {
             error: 1,
             nombre: '',
             msg: {
-                type: 'error',
+                icon: 'error',
                 message: 'Error al subir el archivo, comuniquese con el administrador'
             }
         }
@@ -107,8 +100,8 @@ export const borrarArchivo = async (img: string) => {
             error: 1,
             nombre: '',
             msg: {
-                type: 'error',
-                message: 'Error al borrar el archivo, comuniquese con el administrador'
+                icon: 'error',
+                text: 'Error al borrar el archivo, comuniquese con el administrador'
             }
         }
     }

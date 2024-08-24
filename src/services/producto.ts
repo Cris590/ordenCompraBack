@@ -161,14 +161,6 @@ export const obtenerImagenesColoresProducto = async (req: Request, res: Response
 export const cargarImagenProducto = async (req: Request, res: Response) => {
     try {
 
-
-        let sampleFile;
-        let uploadPath;
-
-        console.log('**************')
-        console.log(req.files)
-        console.log(req.body)
-
         if (!req.files || Object.keys(req.files).length === 0 || !req.files.imagen) {
             return res.status(400).send('No files were uploaded.');
         }
@@ -207,4 +199,154 @@ export const cargarImagenProducto = async (req: Request, res: Response) => {
         })
     }
 
+}
+
+export const borrarImagenProducto = async (req: Request, res: Response) => {
+    try {
+
+        if(!req.body.url || !req.body.cod_producto_color_imagen){
+            return res.send({
+                error:1,
+                msg:{
+                    type:'error',
+                    message:'Los parametros son obligatorios'
+                }
+            })
+        }
+        await borrarArchivo(req.body.url)
+        await productoDao.borrarImagenProductoColor(req.body.cod_producto_color_imagen)
+        
+        res.send({
+            error: 0,
+            msg:{
+                icon:'success',
+                text:'Se ha borrado la imagen correctamente'
+            }
+        })
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al borrar la imagen, comuniquese con el administrador'
+            }
+        })
+    }
+
+}
+
+export const crearColorProducto = async (req: Request, res: Response) => {
+    try {
+
+        if(!req.body.cod_producto || !req.body.color || !req.body.color_descripcion){
+            return res.send({
+                error:1,
+                msg:{
+                    type:'error',
+                    message:'Los parametros son obligatorios'
+                }
+            })
+        }
+        let data = req.body
+        let response = await productoDao.insertarProductoColor(data)
+        res.send({
+            error: 0,
+            msg:{
+                icon:'success',
+                text:'Color creado correctamente'
+            }
+        })
+        
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al crear el color para este producto, comuniquese con el administrador!'
+            }
+        })
+    }
+}
+
+export const editarColorProducto = async (req: Request, res: Response) => {
+    try {
+
+        if(!req.body.cod_producto || !req.body.color || !req.body.color_descripcion || !req.params.cod_producto_color){
+            return res.send({
+                error:1,
+                msg:{
+                    type:'error',
+                    message:'Los parametros son obligatorios'
+                }
+            })
+        }
+        let data = req.body
+        let response = await productoDao.editarProductoColor(data, +req.params.cod_producto_color)
+        res.send({
+            error: 0,
+            msg:{
+                icon:'success',
+                text:'Color editado correctamente'
+            }
+        })
+        
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al editar el color para este producto, comuniquese con el administrador!'
+            }
+        })
+    }
+}
+
+export const borrarColorProducto = async (req: Request, res: Response) => {
+    try {
+
+        let { cod_producto_color } = req.params
+        if( !req.params.cod_producto_color ){
+            return res.send({
+                error:1,
+                msg:{
+                    type:'error',
+                    message:'Los parametros son obligatorios'
+                }
+            })
+        }
+        
+        let imagenesProducto = await generalService.getTableInformation('producto_color_imagen', 'cod_producto_color',cod_producto_color)
+
+        for (const imagen of imagenesProducto) {
+            await borrarArchivo(imagen.url)
+            await productoDao.borrarImagenProductoColor(imagen.cod_producto_color_imagen)
+        }
+
+        await productoDao.borrarProductoColor(+cod_producto_color)
+        
+        res.send({
+            error: 0,
+            msg:{
+                icon:'success',
+                text:'Se ha borrado el color y todas las imagenes asociadas a este'
+            }
+        })
+        
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al editar el color para este producto, comuniquese con el administrador!'
+            }
+        })
+    }
 }
