@@ -14,7 +14,7 @@ export const obtenerProductos = async (req: Request, res: Response) => {
         let productosResumen = []
         for (const producto of productos) {
             let colorProducto: {color:string , color_descripcion:string}[] = []
-            if (producto.tiene_color && producto.color) {
+            if (producto.tiene_color) {
                 colorProducto = await productoDao.getColoresProductoResumen(producto.cod_producto)
             }
 
@@ -106,15 +106,86 @@ export const obtenerInfoBasicaProducto = async (req: Request, res: Response) => 
 
 }
 
+
+export const crearProducto = async (req: Request, res: Response) => {
+    try {
+
+        if(!req.body.nombre || !req.body.cod_categoria){
+            return res.send({
+                error:1,
+                msg:{
+                    type:'error',
+                    message:'Los parametros son obligatorios'
+                }
+            })
+        }
+
+        let producto = await productoDao.crearProducto(req.body)
+        res.send({
+            error: 0,
+            msg:{
+                icon:'success',
+                text:'Producto creado correctamente'
+            },
+            cod_producto: producto[0]
+        })
+
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al consultar los productos'
+            }
+        })
+    }
+
+}
+
+export const editarProducto = async (req: Request, res: Response) => {
+    try {
+
+        let { codProducto } = req.params
+
+        if(req.body.talla){
+            req.body.talla = JSON.stringify(req.body.talla)
+        }
+        let producto = await productoDao.actualizarProducto(req.body, +codProducto)
+        res.send({
+            error: 0,
+            msg:{
+                icon:'success',
+                text:'Producto editado correctamente'
+            }
+        })
+
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al consultar los productos'
+            }
+        })
+    }
+
+}
+
 export const obtenerColoresProducto = async (req: Request, res: Response) => {
     try {
 
         let { cod_producto } = req.params
         let colores = await generalService.getTableInformation('producto_color', 'cod_producto', cod_producto)
+        let producto = await generalService.getTableInformation('producto','cod_producto',cod_producto)
 
         res.send({
             error:0,
-            colores
+            colores,
+            tiene_color:producto[0].tiene_color
         })
        
 
@@ -349,4 +420,31 @@ export const borrarColorProducto = async (req: Request, res: Response) => {
             }
         })
     }
+}
+
+
+
+export const obtenerTallasProducto = async (req: Request, res: Response) => {
+    try {
+        let { codProducto } = req.params
+
+        let producto = await generalService.getTableInformation('producto','cod_producto', codProducto)
+        res.send({
+            error: 0,
+            tallas: producto.length > 0 ? JSON.parse(producto[0].talla) : [],
+            tiene_talla: producto[0].tiene_talla
+        })
+
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al consultar los productos'
+            }
+        })
+    }
+
 }

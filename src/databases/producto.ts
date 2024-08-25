@@ -4,7 +4,7 @@ import config  from '../../knexfile';
 import { logDatabasePYS } from '../helpers/logger';
 import * as formatMessages from '../helpers/formatLogMessages';
 import { IMenuChild, IUser } from '../interfaces/user';
-import { IProductoResumen } from '../interfaces/producto';
+import { IProductoEditar, IProductoResumen } from '../interfaces/producto';
 
 const db = Knex(config.development);
 
@@ -17,7 +17,7 @@ db.on('query', (message:any) => logDatabasePYS.info(formatMessages.queryFormat(m
 
 export const getProductos = (): Promise<IProductoResumen[]> => {
   return db
-    .select('p.cod_producto','p.nombre', 'p.color','p.talla', 'p.activo','p.tiene_talla','p.tiene_color', 'c.nombre as categoria', 'c.sexo')
+    .select('p.cod_producto','p.nombre','p.talla', 'p.activo','p.tiene_talla','p.tiene_color', 'c.nombre as categoria', 'c.sexo')
     .from('producto as p')
     .join('categoria as c', 'c.cod_categoria','p.cod_categoria')
 }
@@ -33,7 +33,7 @@ export const getColoresProductoResumen = ( cod_producto:number ): Promise<{color
 
 export const getProductoDetalle = (codProducto:string): Promise<IProductoResumen[]> => {
   return db
-    .select('p.cod_producto','p.nombre', 'p.color','p.talla', 'p.activo','p.tiene_talla','p.tiene_color', 'c.cod_categoria',  'c.sexo')
+    .select('p.cod_producto','p.nombre','p.talla', 'p.activo','p.tiene_talla','p.tiene_color', 'c.cod_categoria',  'c.sexo')
     .from('producto as p')
     .join('categoria as c', 'c.cod_categoria','p.cod_categoria')
     .where('p.cod_producto', codProducto)
@@ -44,6 +44,14 @@ export const getInfoBasicaProducto = (codProducto:string): Promise<IProductoResu
     .select('cod_producto','nombre','p.cod_categoria',  'p.activo')
     .from('producto as p')
     .where('p.cod_producto', codProducto)
+}
+
+export const crearProducto = async (data: { nombre:string, cod_categoria:number }) => {
+  return db('producto').insert(data);
+}
+
+export const actualizarProducto = async (data:IProductoEditar, codProducto:number) => {
+  return await db('producto').where('cod_producto',codProducto).update(data)
 }
 
 export const insertarImagenProductoColor = async (data: { url:string, cod_producto_color:string }) => {

@@ -22,3 +22,14 @@ export interface IProductoDetalle extends IProductoResumen{
     sexo_detalle:string[]
     
 }
+
+
+export interface IProductoEditar{
+    nombre?: string,
+    cod_categoria?: number,
+    cod_tallaje?: number,
+    activo?: boolean,
+    talla?:string[],
+    tiene_color?: boolean,
+    tiene_talla?: boolean
+}
