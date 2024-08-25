@@ -17,9 +17,11 @@ db.on('query', (message:any) => logDatabasePYS.info(formatMessages.queryFormat(m
 
 export const getProductos = (): Promise<IProductoResumen[]> => {
   return db
-    .select('p.cod_producto','p.nombre','p.talla', 'p.activo','p.tiene_talla','p.tiene_color', 'c.nombre as categoria', 'c.sexo')
+    .select('p.cod_producto','p.nombre','p.talla', 'p.activo','p.tiene_talla','p.tiene_color', 'c.nombre as categoria', 'c.sexo', 'p.activo')
     .from('producto as p')
     .join('categoria as c', 'c.cod_categoria','p.cod_categoria')
+    .orderBy('p.activo','desc')
+    .orderBy('p.cod_producto')
 }
 
 export const getColoresProductoResumen = ( cod_producto:number ): Promise<{color:string , color_descripcion:string}[]> => {

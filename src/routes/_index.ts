@@ -5,6 +5,7 @@ import express, { NextFunction, Request, Response } from 'express';
 import { router as usersRouter } from './users';
 import { router as categoriaRouter } from './categoria';
 import { router as productoRouter } from './producto';
+import { router as tallajeRouter } from './tallaje';
 
 //Apis externas
 
@@ -21,4 +22,6 @@ router.get('', (req: Request, res: Response, next: NextFunction) => {
 router.use('/users', usersRouter);
 router.use('/categoria', categoriaRouter);
 router.use('/producto', productoRouter);
+router.use('/tallaje', tallajeRouter);
+
 
