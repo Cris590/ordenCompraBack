@@ -82,6 +82,24 @@ export const createUser = async (user: IUser): Promise<{ createdUser: number; me
         };
     } catch (err:any) {
         logErrorApp.error(`ERROR === { servicio:'users_service',error:${String(err)}  }`)
+        throw new Error("Error creando usuario" + err);
+    }
+};
+
+export const editUser = async (user: IUser , codUsuario:number): Promise<{ error:number }> => {
+    try {
+
+        const salt = bcrypt.genSaltSync();
+        if(user.password && user.password?.length>0){
+            user.password = (user.password) && bcrypt.hashSync(user.password, salt)
+        }
+        
+        await userDao.editarUsuario(user,codUsuario);
+        return {
+            error:0
+        };
+    } catch (err:any) {
+        logErrorApp.error(`ERROR === { servicio:'users_service',error:${String(err)}  }`)
         throw new Error("Error Creating User" + err);
     }
 };

@@ -1,9 +1,7 @@
 import { Request, Response } from 'express';
-import { v4 as uuidv4 } from 'uuid';
-import path from 'path';
 import * as generalService from './general'
 import * as productoDao from '../databases/producto'
-import { IColorProductoBD, IProductoDetalle } from '../interfaces/producto';
+import { IProductoDetalle } from '../interfaces/producto';
 import { borrarArchivo, subirArchivo } from '../helpers/subir-archivo';
 
 
@@ -196,7 +194,7 @@ export const obtenerColoresProducto = async (req: Request, res: Response) => {
             error: 1,
             msg: {
                 icon: 'error',
-                text: 'Error al cargar la imagen'
+                text: 'Error al obtener colores por producto'
             }
         })
     }

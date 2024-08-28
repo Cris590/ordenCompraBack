@@ -4,6 +4,7 @@ import config  from '../../knexfile';
 import { logDatabasePYS } from '../helpers/logger';
 import * as formatMessages from '../helpers/formatLogMessages';
 import { ICategoria } from '../interfaces/categoria';
+import { IProductoResumen } from '../interfaces/producto';
 
 const db = Knex(config.development);
 
@@ -23,3 +24,17 @@ export const actualizarCategoria = async (data: ICategoria, codCategoria: number
       .where({ cod_categoria: codCategoria });
   
   }
+
+  
+export const productosCategoria = async (codCategoria: number) : Promise<IProductoResumen[]> => {
+  return db
+    .select('p.cod_producto','p.nombre','p.talla', 'p.activo','p.tiene_talla','p.tiene_color', 'c.nombre as categoria', 'c.sexo', 'p.activo')
+    .from('producto as p')
+    .join('categoria as c', 'c.cod_categoria','p.cod_categoria')
+    .where('p.cod_categoria',codCategoria)
+    .andWhere('p.activo',1)
+    .andWhere('c.activo',1)
+    .orderBy('p.activo','desc')
+    .orderBy('p.cod_producto')
+
+}

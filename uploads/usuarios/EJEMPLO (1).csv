@@ -1,0 +1,3 @@
+﻿nombre,cedula,correo,sexo,activo,password
+Usuario prueba Masculino,123456,pruebas@prueba.com,M,1,123456
+Usuario prueba Femenino,987654,pruebas@prueba.com,F,1,123456

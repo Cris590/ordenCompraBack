@@ -2,11 +2,38 @@ import express, { Request, Response } from 'express';
 import * as generalService from './general'
 import * as categoriaDao from '../databases/categoria'
 import { ICategoria } from '../interfaces/categoria';
+import * as productoDao from '../databases/producto'
 
 
 export const obtenerCategorias = async (req: Request, res: Response) => {
     try {
         let categorias  = await generalService.getTableInformation('categoria')
+        let categoriaDetalle = categorias.map((categoria)=>({
+            ...categoria,
+            sexo:JSON.parse(categoria.sexo)
+        }))
+        res.send({
+            error:0,
+            categorias:categoriaDetalle
+        })
+
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg:{
+                icon:'error',
+                text:'Error al consultar las categorias'
+            } 
+        })
+    }
+
+}
+
+export const obtenerCategoriasActivas = async (req: Request, res: Response) => {
+    try {
+        let categorias  = await generalService.getTableInformation('categoria','activo','1')
         let categoriaDetalle = categorias.map((categoria)=>({
             ...categoria,
             sexo:JSON.parse(categoria.sexo)
@@ -119,6 +146,48 @@ export const editarCategoria = async (req: Request, res: Response) => {
                 icon:'success',
                 text:'Categoria Actualizada correctamente'
             } 
+        })
+
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg:{
+                icon:'error',
+                text:'Error al consultar las categorias'
+            } 
+        })
+    }
+
+}
+
+export const productosCategoria = async (req: Request, res: Response) => {
+    try {
+
+        const { codCategoria } = req.params
+        
+        let productos = await categoriaDao.productosCategoria(+codCategoria)
+        let productosResumen = []
+        for (const producto of productos) {
+            let colorProducto: {color:string , color_descripcion:string}[] = []
+            if (producto.tiene_color) {
+                colorProducto = await productoDao.getColoresProductoResumen(producto.cod_producto)
+            }
+
+            productosResumen.push ({
+                ...producto,
+                color: producto.tiene_color ? colorProducto : undefined,
+                talla: producto.tiene_talla ? JSON.parse(producto.talla || '') : undefined,
+                sexo: JSON.parse(producto.sexo)
+
+            })
+        }
+
+
+        res.send({
+            error:0,
+            productos: productosResumen
         })
 
     } catch (e: any) {
