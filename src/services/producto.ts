@@ -55,7 +55,7 @@ export const obtenerProductoEditar = async (req: Request, res: Response) => {
 
             return {
                 ...producto,
-                color_detalle: producto.tiene_color ? JSON.parse(producto.color || '') : undefined,
+                // color_detalle: producto.tiene_color ? JSON.parse(producto.color || '') : undefined,
                 talla_detalle: producto.tiene_talla ? JSON.parse(producto.talla || '') : undefined,
                 sexo_detalle: JSON.parse(producto.sexo)
             }
@@ -112,8 +112,8 @@ export const crearProducto = async (req: Request, res: Response) => {
             return res.send({
                 error:1,
                 msg:{
-                    type:'error',
-                    message:'Los parametros son obligatorios'
+                    icon:'error',
+                    text:'Los parametros son obligatorios'
                 }
             })
         }
@@ -180,9 +180,10 @@ export const obtenerColoresProducto = async (req: Request, res: Response) => {
         let colores = await generalService.getTableInformation('producto_color', 'cod_producto', cod_producto)
         let producto = await generalService.getTableInformation('producto','cod_producto',cod_producto)
 
+        let coloresActivos = colores.filter((color)=>+(color.activo) === 1)
         res.send({
             error:0,
-            colores,
+            colores:coloresActivos,
             tiene_color:producto[0].tiene_color
         })
        
@@ -206,7 +207,6 @@ export const obtenerImagenesColoresProducto = async (req: Request, res: Response
 
         let { cod_producto_color } = req.params
         let imagenes = await generalService.getTableInformation('producto_color_imagen', 'cod_producto_color', cod_producto_color)
-
         res.send({
             error:0,
             imagenes
@@ -277,8 +277,8 @@ export const borrarImagenProducto = async (req: Request, res: Response) => {
             return res.send({
                 error:1,
                 msg:{
-                    type:'error',
-                    message:'Los parametros son obligatorios'
+                    icon:'error',
+                    text:'Los parametros son obligatorios'
                 }
             })
         }
@@ -313,8 +313,8 @@ export const crearColorProducto = async (req: Request, res: Response) => {
             return res.send({
                 error:1,
                 msg:{
-                    type:'error',
-                    message:'Los parametros son obligatorios'
+                    icon:'error',
+                    text:'Los parametros son obligatorios'
                 }
             })
         }
@@ -348,8 +348,8 @@ export const editarColorProducto = async (req: Request, res: Response) => {
             return res.send({
                 error:1,
                 msg:{
-                    type:'error',
-                    message:'Los parametros son obligatorios'
+                    icon:'error',
+                    text:'Los parametros son obligatorios'
                 }
             })
         }
@@ -384,8 +384,8 @@ export const borrarColorProducto = async (req: Request, res: Response) => {
             return res.send({
                 error:1,
                 msg:{
-                    type:'error',
-                    message:'Los parametros son obligatorios'
+                    icon:'error',
+                    text:'Los parametros son obligatorios'
                 }
             })
         }
@@ -430,7 +430,8 @@ export const obtenerTallasProducto = async (req: Request, res: Response) => {
         res.send({
             error: 0,
             tallas: producto.length > 0 ? JSON.parse(producto[0].talla) : [],
-            tiene_talla: producto[0].tiene_talla
+            tiene_talla: producto[0].tiene_talla,
+            cod_tallaje: producto[0].cod_tallaje
         })
 
     } catch (e: any) {

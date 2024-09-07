@@ -11,6 +11,7 @@ router.post('/crear',entidadService.crearEntidad)
 router.get('/info_basica/:codEntidad', entidadService.obtenerInfoBasicaEntidad);
 router.put('/editar_entidad/:codEntidad', entidadService.editarEntidad);
 router.get('/usuarios/:codEntidad', entidadService.obtenerUsuariosEntidad);
+router.get('/usuario_coordinador/:codEntidad', entidadService.obtenerUsuarioCoordinadorEntidad);
 
 
 router.post('/cargar_usuarios',entidadService.cargarUsuariosEntidad)

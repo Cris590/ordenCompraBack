@@ -16,9 +16,10 @@ db.on('query', (message: any) => logDatabasePYS.info(formatMessages.queryFormat(
 
 export async function getUser(cedula: string): Promise<IUser> {
   return db
-    .select("*")
-    .from({ u: 'usuario' })
-    .where('cedula', cedula)
+    .select("u.*","e.nombre as entidad","e.nit")
+    .from("usuario as u")
+    .leftJoin("entidad as e","u.cod_entidad","e.cod_entidad")
+    .where('u.cedula', cedula)
     .first()
 }
 
@@ -33,7 +34,7 @@ export async function addRolesToUser(user: IUser): Promise<IUser> {
 
 export async function getMenuchildrenByRole(cod_perfil: number): Promise<IMenuChild[]> {
   return await db
-    .select("cod_menu", "label", "route", "icono")
+    .select("cod_menu", "label", "route", "icono","visible")
     .from('menu as m')
     .whereRaw(`JSON_CONTAINS(perfil ,'[` + cod_perfil + `]')`)
     .where('activo', 1)

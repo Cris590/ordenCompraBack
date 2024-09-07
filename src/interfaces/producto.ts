@@ -2,7 +2,6 @@ export interface IProductoResumen {
     cod_producto:number,
     nombre:string,
     talla?:string,
-    color?:string,
     categoria:string,
     cod_categoria?:string,
     tiene_talla:boolean,
@@ -32,4 +31,13 @@ export interface IProductoEditar{
     talla?:string[],
     tiene_color?: boolean,
     tiene_talla?: boolean
+}
+
+export interface IProductoMostrar{
+    cod_producto:number,
+    nombre:string,
+    tiene_color: boolean,
+    tiene_talla: boolean,
+    colores:IColorProductoBD[],
+    talla:string[]
 }

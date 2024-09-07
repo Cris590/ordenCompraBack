@@ -20,3 +20,9 @@ export const crearImagenTallaje = async (data:ITallaje) => {
 export const editarTallaje = async (data:any , codTallaje:number) => {
   return await db('tallaje').where('cod_tallaje',codTallaje).update(data)
 }
+
+export const getTallasActivas = async () => {
+  return db.select("cod_tallaje","nombre","imagen")
+  .from("tallaje")
+  .where('activo', 1)
+}

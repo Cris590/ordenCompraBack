@@ -122,7 +122,7 @@ export const editarEntidad = async (req: Request, res: Response) => {
             error: 1,
             msg: {
                 icon: 'error',
-                text: 'Error al consultar los productos'
+                text: 'Error al editar la identidad'
             }
         })
     }
@@ -307,6 +307,30 @@ export const obtenerUsuariosEntidad = async (req: Request, res: Response) => {
 
 }
 
+export const obtenerUsuarioCoordinadorEntidad = async (req: Request, res: Response) => {
+    try {
+        let { codEntidad } = req.params
+
+        let usuarioCoor = await entidadDao.getUsuarioCoordinador(codEntidad)
+        res.send({
+            error: 0,
+            usuario:usuarioCoor.length > 0 ? usuarioCoor[0] : null
+        })
+
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al consultar los productos'
+            }
+        })
+    }
+
+}
+
 
 export const crearUsuarioEntidad = async (req:Request, res:Response) =>{
     try {
@@ -314,6 +338,7 @@ export const crearUsuarioEntidad = async (req:Request, res:Response) =>{
         let usuarioNuevo = await userService.createUser(user as IUser)
         res.send({
             error: 0,
+            cod_usuario:usuarioNuevo.createdUser,
             msg: {
                 icon: 'success',
                 text: 'Usuario creado correctamente'
@@ -344,7 +369,7 @@ export const editarUsuarioEntidad= async (req: Request, res: Response) => {
             error:0,
             msg:{
                 icon:'success',
-                text:'Usuario Creado correctamente'
+                text:'Usuario modificado correctamente'
             } 
         })
 

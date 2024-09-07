@@ -30,6 +30,30 @@ export const obtenerTallas = async (req: Request, res: Response) => {
 
 }
 
+
+export const obtenerTallasActivas = async (req: Request, res: Response) => {
+    try {
+        let tallajes = await tallajeDao.getTallasActivas()
+        res.send({
+            error: 0,
+            tallajes
+        })
+
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al consultar los productos'
+            }
+        })
+    }
+
+}
+
+
 export const crearTallaje = async (req: Request, res: Response) => {
     try {
 
@@ -82,6 +106,11 @@ export const editarTallaje = async (req: Request, res: Response) => {
         let imagen = ''
 
         if (req.files && req.files.imagen) {
+            
+            // Borrar imagene del servidor
+            let tallajeInfo = await generalService.getTableInformation('tallaje','cod_tallaje',cod_tallaje)
+            await borrarArchivo(tallajeInfo[0].imagen)
+
 
             let files = Array.isArray(req.files.imagen) ? req.files.imagen : [req.files.imagen]
             for (const file of files) {

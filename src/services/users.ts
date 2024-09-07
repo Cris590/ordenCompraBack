@@ -4,7 +4,7 @@ import * as userDao from '../databases/users';
 import { logErrorApp } from '../helpers/logger';
 import { IUser } from '../interfaces/user';
 
-export const authenticate = async (cedula: string, password: string,): Promise<{ error: number; token?: string, menu?: any, user?:IUser }> => {
+export const authenticate = async (cedula: string, password: string,): Promise<{ error: number; token?: string, menu?: any, user?: IUser }> => {
     try {
         const user = await userDao.getUser(cedula);
         let loginSuccess = {
@@ -12,7 +12,6 @@ export const authenticate = async (cedula: string, password: string,): Promise<{
             message: 'Error en el inicio de sesión'
         };
         if (!!user) {
-            let userRole
             let menu = await getMenu(user.cod_perfil)
 
             loginSuccess.message = 'Invalid credentials: ERP'
@@ -23,14 +22,14 @@ export const authenticate = async (cedula: string, password: string,): Promise<{
                 };
 
                 delete user.password;
-                delete user.cedula;
+                // delete user.cedula;
 
                 const token = jwt.sign(
                     { user },
                     (process.env.JWTSECRET as string) ?? 'secret',
                     signInOptions
                 );
-                return { error: 0, token, menu,user };
+                return { error: 0, token, menu, user };
             }
         }
         return { error: 1 };
@@ -73,32 +72,32 @@ export const createUser = async (user: IUser): Promise<{ createdUser: number; me
         user.password = (user.password) && bcrypt.hashSync(user.password, salt)
 
         const userCreated = await userDao.getUser(user.cedula!)
-        if(userCreated)throw new Error('Usuario con cédula '+ user.cedula +' ya esta creado')
+        if (userCreated) throw new Error('Usuario con cédula ' + user.cedula + ' ya esta creado')
 
         const userId = await userDao.createUser(user);
         return {
             createdUser: userId[0],
             message: 'User created',
         };
-    } catch (err:any) {
+    } catch (err: any) {
         logErrorApp.error(`ERROR === { servicio:'users_service',error:${String(err)}  }`)
         throw new Error("Error creando usuario" + err);
     }
 };
 
-export const editUser = async (user: IUser , codUsuario:number): Promise<{ error:number }> => {
+export const editUser = async (user: IUser, codUsuario: number): Promise<{ error: number }> => {
     try {
 
         const salt = bcrypt.genSaltSync();
-        if(user.password && user.password?.length>0){
+        if (user.password && user.password?.length > 0) {
             user.password = (user.password) && bcrypt.hashSync(user.password, salt)
         }
-        
-        await userDao.editarUsuario(user,codUsuario);
+
+        await userDao.editarUsuario(user, codUsuario);
         return {
-            error:0
+            error: 0
         };
-    } catch (err:any) {
+    } catch (err: any) {
         logErrorApp.error(`ERROR === { servicio:'users_service',error:${String(err)}  }`)
         throw new Error("Error Creating User" + err);
     }

@@ -28,7 +28,7 @@ export const crearEntidad = async (data: { nombre: string, cod_categorias: strin
 
 export const getInfoBasicaEntidad = (codEntidad: string): Promise<IEntidadInfoBasica[]> => {
     return db
-        .select('cod_entidad', 'nombre', 'cod_categorias', 'activo')
+        .select('cod_entidad', 'nombre', 'cod_categorias', 'activo','nit','info_contrato')
         .from('entidad')
         .where('cod_entidad', codEntidad)
 }
@@ -46,4 +46,16 @@ export const getUsuariosIdentidad= (codEntidad: string): Promise<IEntidadInfoBas
         .andWhere('u.cod_perfil',3)
         .orderBy('u.activo')
         .orderBy('u.cod_usuario','desc')
+}
+
+export const getUsuarioCoordinador= (codEntidad: string): Promise<IEntidadInfoBasica[]> => {
+    return db
+        .select('u.cod_usuario','u.email','u.nombre','u.activo','u.sexo','u.cedula','o.cod_orden')
+        .from('usuario as u')
+        .leftJoin('orden as o','u.cod_usuario','o.cod_usuario')
+        .where('u.cod_entidad', codEntidad)
+        .andWhere('u.cod_perfil',2)
+        .orderBy('u.activo')
+        .orderBy('u.cod_usuario','desc')
+        .limit(1)
 }

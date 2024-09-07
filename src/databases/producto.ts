@@ -43,7 +43,7 @@ export const getProductoDetalle = (codProducto:string): Promise<IProductoResumen
 
 export const getInfoBasicaProducto = (codProducto:string): Promise<IProductoResumen[]> => {
   return db
-    .select('cod_producto','nombre','p.cod_categoria',  'p.activo')
+    .select('cod_producto','nombre','p.cod_categoria',  'p.activo','p.descripcion')
     .from('producto as p')
     .where('p.cod_producto', codProducto)
 }
@@ -73,5 +73,6 @@ export const editarProductoColor = async (data: { cod_producto:string, color:str
 }
 
 export const borrarProductoColor = async ( codProductoColor:number ) => {
-  return await db.delete().from('producto_color').where('cod_producto_color', codProductoColor)
+  // return await db.delete().from('producto_color').where('cod_producto_color', codProductoColor)
+  return db('producto_color').where('cod_producto_color',codProductoColor).update({activo:0})
 }

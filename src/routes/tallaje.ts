@@ -9,3 +9,4 @@ export const router = express.Router();
 router.get('/obtener', tallajeService.obtenerTallas);
 router.post('/crear-tallaje', tallajeService.crearTallaje);
 router.put('/editar-tallaje/:cod_tallaje', tallajeService.editarTallaje);
+router.get('/obtener-activas', tallajeService.obtenerTallasActivas);

@@ -7,6 +7,7 @@ import { router as categoriaRouter } from './categoria';
 import { router as productoRouter } from './producto';
 import { router as tallajeRouter } from './tallaje';
 import { router as entidadRouter } from './entidad';
+import { router as ordenCompraRouter } from './orden_compra';
 
 //Apis externas
 
@@ -25,5 +26,8 @@ router.use('/categoria', categoriaRouter);
 router.use('/producto', productoRouter);
 router.use('/tallaje', tallajeRouter);
 router.use('/entidad', entidadRouter);
+router.use('/orden_compra', ordenCompraRouter);
+
+
 
 
