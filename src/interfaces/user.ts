@@ -9,6 +9,7 @@ export interface IUser {
   cod_perfil:number;
   cod_entidad?:number;
   sexo:string;
+  cod_cargo_entidad:number
 }
 
 export interface IUserRole {

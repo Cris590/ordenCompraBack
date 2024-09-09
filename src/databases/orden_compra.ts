@@ -16,14 +16,12 @@ db.on('query', (message: any) => logDatabasePYS.info(formatMessages.queryFormat(
 
 export const getUsuariosEntidad = (codUsuario:number): Promise<any[]> => {
     return db
-        .select('e.cod_categorias', 'u.sexo')
+        .select('c.cod_categorias', 'u.sexo')
         .from('usuario as u')
-        .join('entidad as e', 'u.cod_entidad','e.cod_entidad')
+        .join('cargo_entidad as c', 'u.cod_cargo_entidad','c.cod_cargo_entidad')
         .where('u.cod_usuario',codUsuario)
         .andWhere('u.activo',1)
-        .andWhere('u.cod_perfil',3)
-        .andWhere('e.activo',1)
-        
+        .andWhere('u.cod_perfil',3)  
 }
 
 export const getProductosEntidades = (entidades:number[] , sexo:string): Promise<any[]> => {
@@ -77,4 +75,49 @@ export const getImagenesPorColor = (codProductoColor: number):Promise<{url:strin
     .select('url')
     .from('producto_color_imagen')
     .where('cod_producto_color',codProductoColor)
+}
+
+
+
+export const crearOrdenCompra = async (data: any) => {
+    return db('orden').insert(data);
+}
+export const actualizarOrdenCompra = async (data: { ciudad:string, direccion:string}, codOrden: number) => {
+    return db("orden")
+      .update(data)
+      .where({ cod_orden: codOrden });
+  
+  }
+
+export const validarOrden = async (codUsuario:number) => {
+    return db
+    .select("o.*","u.nombre as usuario_creacion")
+    .from('orden as o')
+    .leftJoin('usuario as u','o.cod_usuario_creacion','u.cod_usuario')
+    .where('o.cod_usuario',codUsuario)
+}
+
+export const obtenerInfoUsuario = async (codUsuario:number) => {
+    return db
+    .select('u.cod_usuario', 'e.nombre as entidad', 'e.nit','u.nombre as usuario','u.cedula','c.nombre as cargo_entidad','u.sexo')
+    .from('usuario as u')
+    .join('entidad as e','e.cod_entidad','u.cod_entidad')
+    .join('cargo_entidad as c','c.cod_cargo_entidad','u.cod_cargo_entidad')
+    .where('u.cod_usuario',codUsuario)
+    .andWhere('u.activo',1)
+    .limit(1)
+}
+
+export const obtenerUsuariosCoordinador = (codEntidad:number): Promise<any[]> => {
+    return db
+    .select('u.cod_usuario','u.email','u.nombre','u.activo','u.sexo','u.cedula','u.cod_cargo_entidad', 'o.cod_orden',
+        'c.nombre as cargo_entidad', 
+    db.raw(`IF(o.direccion is null OR o.ciudad is null, false, true) as orden_completa`))
+    .from('usuario as u')
+    .join('cargo_entidad as c','c.cod_cargo_entidad','u.cod_cargo_entidad')
+    .leftJoin('orden as o','u.cod_usuario','o.cod_usuario')
+    .where('u.cod_entidad', codEntidad)
+    .andWhere('u.cod_perfil',3)
+    .orderBy('u.activo')
+    .orderBy('u.cod_usuario','desc') 
 }

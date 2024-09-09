@@ -1,8 +1,9 @@
-import { Request, Response } from 'express';
+import { Request, Response, text } from 'express';
 import * as ordenCompraDao from '../databases/orden_compra'
 import * as productoDao from '../databases/producto'
 
 import * as generalService from '../services/general'
+import { RequestToken } from '../interfaces/express';
 
 
 export const obtenerProductos = async (req: Request, res: Response) => {
@@ -145,4 +146,190 @@ const validarCategoriasActivas = async ( categoriasString : string) =>{
     } catch (e) {
         return []
     }
+}
+
+export const crearOrdenCompra = async (req: Request, res: Response) => {
+    try {
+
+        const {
+            cod_usuario,
+            cod_usuario_creacion,
+            productos
+        } = req.body
+
+        let ordenCompraUsuario = await generalService.getTableInformation('orden','cod_usuario',cod_usuario)
+        if(ordenCompraUsuario.length > 0){
+            return res.send({
+                error:1,
+                msg:{
+                    icon:'error',
+                    text:'Ya existe una orden de compra para este usuario'
+                }
+            })
+        }
+
+        let nuevaOrden = {
+            cod_usuario,
+            cod_usuario_creacion,
+            productos:JSON.stringify(productos)
+        }
+        
+        await ordenCompraDao.crearOrdenCompra(nuevaOrden)
+        res.send({
+            error:0,
+            msg:{
+                icon:'success',
+                text:'Orden montada correctamente'
+            } 
+        })
+
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg:{
+                icon:'error',
+                text:'Error al crear la categoria'
+            } 
+        })
+    }
+
+}
+
+export const actualizarOrdenCompra = async (req: Request, res: Response) => {
+    try {
+
+        const {
+            ciudad,
+            direccion
+        } = req.body
+
+        const { codOrdenCompra } = req.params
+        if(!ciudad  || !direccion || !codOrdenCompra){
+            return res.send({
+                error:1,
+                msg:{
+                icon:'error',
+                text:'Los parametros ciudad y dirección son obligatorios'
+            }
+            })
+        }
+
+    
+        let ordenActualizar = {
+           ciudad,
+           direccion
+        }
+        
+        await ordenCompraDao.actualizarOrdenCompra( ordenActualizar , +codOrdenCompra)
+        res.send({
+            error:0,
+            msg:{
+                icon:'success',
+                text:'Orden actualizada correctamente'
+            } 
+        })
+
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg:{
+                icon:'error',
+                text:'Error al crear la categoria'
+            } 
+        })
+    }
+
+}
+
+export const validarOrdenUsuario = async (request: Request, res: Response) => {
+    try {
+        let req = request as RequestToken
+        let { codUsuario} = req.params
+
+        if(req.auth.user.cod_usuario !== +codUsuario){
+            let usuarioInfo = await generalService.getTableInformation('usuario','cod_usuario',codUsuario)
+            if(usuarioInfo.length > 0 && 
+                (
+                    usuarioInfo[0].cod_perfil !== 3 || 
+                    usuarioInfo[0].cod_entidad !== req.auth.user.cod_entidad
+                )
+            )
+            {
+                return res.send({
+                    error: 0,
+                    existe:0
+                })
+            }
+        }
+        let categoriasEntidadUsuario = await ordenCompraDao.getUsuariosEntidad(+codUsuario)
+        let categoriaValidacion = await  validarCategoriasActivas(categoriasEntidadUsuario[0].cod_categorias)
+        
+        let orden = await ordenCompraDao.validarOrden(+codUsuario)
+        
+        if(orden.length > 0){
+            orden[0].productos = JSON.parse(orden[0].productos)
+        }
+
+        let usuario = await ordenCompraDao.obtenerInfoUsuario(+codUsuario)
+
+        res.send({
+            error: 0,
+            existe: (orden.length > 0) ? 1 : 0,
+            orden:orden[0],
+            categorias:categoriaValidacion,
+            usuario:usuario[0]
+
+        })
+
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al validar la orden del usuario'
+            }
+        })
+    }
+
+}
+
+export const usuariosOrdenesCoordinador= async (request: Request, res: Response) => {
+    try {
+        let req = request as RequestToken
+       
+        if(req.auth.user.cod_perfil !== 2){
+            return res.send({
+                error: 1,
+                msg:{
+                    icon:'error',
+                    text:'No tiene permisos para ver esta información'
+                }
+            })
+        
+        }
+        let usuarios = await ordenCompraDao.obtenerUsuariosCoordinador(+req.auth.user.cod_entidad)
+        
+        res.send({
+            error: 0,
+           usuarios
+        })
+
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al validar la orden del usuario'
+            }
+        })
+    }
+
 }

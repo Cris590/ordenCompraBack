@@ -5,5 +5,6 @@ export interface IEntidadResumen {
 }
 
 export interface IEntidadInfoBasica extends IEntidadResumen{
-    cod_categorias:string
+    nit:string,
+    info_contrato:string
 }
