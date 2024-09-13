@@ -1,14 +1,14 @@
 version: '3.8'
-
 services:
   app:
-    build: .
+    #build: .
+    image: ghcr.io/cris590/ordencompra-back-v2
     container_name: backend_ordenes
     ports:
       - "3200:3000"
     volumes:
-      - .:/usr/src/app
-      - /usr/src/app/node_modules
+      # - .:/usr/src/app
+      # - /usr/src/app/node_modules
       - ./uploads:/usr/src/app/uploads
     environment:
       - .env
