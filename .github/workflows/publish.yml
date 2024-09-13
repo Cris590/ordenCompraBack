@@ -1,0 +1,60 @@
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
+# GitHub recommends pinning actions to a commit SHA.
+# To get a newer version, you will need to update the SHA.
+# You can also reference a tag or branch, but the action may change without warning.
+
+name: Publish Docker image
+
+on:
+  push: 
+    branches: ["main", "development"]
+  pull_request:
+    branches: ["main", "development"]
+
+jobs:
+  create-docker-image:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.TOKEN_GITHUB }}
+
+      - name: Build and push Docker image
+        run: | 
+          docker build . --tag ghcr.io/Cris590/ordenCompraBack-v2:latest
+          docker push ghcr.io/Cris590/ordenCompraBack-v2:latest
+
+  # deploy:
+  #   needs: create-docker-image
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Install sspass
+  #       run: sudo apt-get install -y sshpass
+  #     - name: SSH into server
+  #       run: |
+  #         sshpass -p ${{secrets.AUTH_PASS}} ssh -o StrictHostKeyChecking=no ${{secrets.AUTH_SERVER}} << EOF
+  #         cd /root/ordenes_compra/backend/
+  #         docker login ghcr.io -u Cris590 -p ${{secrets.TOKEN_GITHUB}}
+  #         docker pull ghcr.io/Cris590/ordenCompraBack-v2:latest
+  #         docker stop ordenCompraBack && docker rm ordenCompraBack
+  #         docker run -d \
+  #           --name ordenCompraBack \
+  #           -p 3000:3200 \
+  #           -w /app \
+  #           --restart always
+  #           --env-file .env \
+  #           ghcr.io/Cris590/ordenCompraBack-v2:latest
+  #         EOF
+
+    
+
