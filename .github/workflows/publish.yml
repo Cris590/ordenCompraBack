@@ -31,8 +31,8 @@ jobs:
 
       - name: Build and push Docker image
         run: | 
-          docker build . --tag ghcr.io/Cris590/ordencompra-back-v2:latest
-          docker push ghcr.io/Cris590/ordencompra-back-v2:latest
+          docker build . --tag ghcr.io/cris590/ordencompra-back-v2:latest
+          docker push ghcr.io/cris590/ordencompra-back-v2:latest
 
   # deploy:
   #   needs: create-docker-image
@@ -44,8 +44,8 @@ jobs:
   #       run: |
   #         sshpass -p ${{secrets.AUTH_PASS}} ssh -o StrictHostKeyChecking=no ${{secrets.AUTH_SERVER}} << EOF
   #         cd /root/ordenes_compra/backend/
-  #         docker login ghcr.io -u Cris590 -p ${{secrets.TOKEN_GITHUB}}
-  #         docker pull ghcr.io/Cris590/ordencompra-back-v2:latest
+  #         docker login ghcr.io -u cris590 -p ${{secrets.TOKEN_GITHUB}}
+  #         docker pull ghcr.io/cris590/ordencompra-back-v2:latest
   #         docker stop ordencompra-back && docker rm ordencompra-back
   #         docker run -d \
   #           --name ordencompra-back \
@@ -53,7 +53,7 @@ jobs:
   #           -w /app \
   #           --restart always
   #           --env-file .env \
-  #           ghcr.io/Cris590/ordencompra-back-v2:latest
+  #           ghcr.io/cris590/ordencompra-back-v2:latest
   #         EOF
 
     
