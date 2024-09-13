@@ -18,6 +18,9 @@ export const getTableInformation =async (table:string,parameter:string|null = nu
         
         
     } catch (e) {
+        console.log('** ERROR GRANDE **')
+        console.log(config.development)
+        console.log(e)
         throw new Error("Error en el servivio de obtener información " + e)
     }
 }

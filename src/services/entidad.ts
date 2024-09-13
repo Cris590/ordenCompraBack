@@ -76,16 +76,6 @@ export const crearEntidad = async (req: Request, res: Response) => {
                 }
             })
         }
-        let revisarEntidad = await generalService.getTableInformation('entidad','nit',req.body.nit.trim())
-        if(revisarEntidad.length > 0){
-            return res.send({
-                error: 1,
-                msg: {
-                    icon: 'error',
-                    text: `Ya existe una entidad creada con este nit : ${req.body.nit.trim()}`
-                } 
-            })
-        }
 
         let entidad = await entidadDao.crearEntidad(req.body)
         res.send({
@@ -141,18 +131,6 @@ export const editarEntidad = async (req: Request, res: Response) => {
     try {
 
         let { codEntidad } = req.params
-
-        let revisarEntidad = await generalService.getTableInformation('entidad','nit',req.body.nit.trim())
-        if(revisarEntidad.length > 0){
-            return res.send({
-                error: 1,
-                msg: {
-                    icon: 'error',
-                    text: `Ya existe una entidad creada con este nit : ${req.body.nit.trim()}`
-                } 
-            })
-        }
-
         await entidadDao.actualizarEntidad(req.body, +codEntidad)
         res.send({
             error: 0,

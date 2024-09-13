@@ -1,6 +1,4 @@
 import { Request, Response } from 'express';
-import { v4 as uuidv4 } from 'uuid';
-import path from 'path';
 import * as generalService from './general'
 import * as tallajeDao from '../databases/tallaje'
 import { borrarArchivo, subirArchivo } from '../helpers/subir-archivo';

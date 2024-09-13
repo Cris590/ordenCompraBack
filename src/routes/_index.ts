@@ -9,6 +9,7 @@ import { router as tallajeRouter } from './tallaje';
 import { router as entidadRouter } from './entidad';
 import { router as ordenCompraRouter } from './orden_compra';
 import { router as solicituDotacionRouter } from './solicitud_dotacion';
+import { router as reporteRouter } from './reporte';
 
 //Apis externas
 
@@ -29,6 +30,7 @@ router.use('/tallaje', tallajeRouter);
 router.use('/entidad', entidadRouter);
 router.use('/orden_compra', ordenCompraRouter);
 router.use('/solicitud_dotacion', solicituDotacionRouter);
+router.use('/reporte', reporteRouter);
 
 
 

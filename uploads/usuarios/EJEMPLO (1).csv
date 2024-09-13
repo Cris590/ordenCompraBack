@@ -1,3 +1,5 @@
-﻿nombre,cedula,correo,sexo,activo,password
-Usuario prueba Masculino,123456,pruebas@prueba.com,M,1,123456
-Usuario prueba Femenino,987654,pruebas@prueba.com,F,1,123456
+﻿nombre,cedula,email,cargo,sexo,activo,password
+Usuario prueba Masculino,111222,pruebas@prueba.com,vendedor,M,1,123456
+Usuario prueba Femenino,333444,pruebas@prueba.com,vendedor,F,1,123456
+OLGA MOREO,45678913,olga@prueba.com,SECRETARIA,F,1,456789
+EDUARDO SANCHEZ,789434,eduardo.m@prueba.com,CONDUCTOR,M,1,123456

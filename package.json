@@ -5,7 +5,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "ts-node src/index.ts",
-    "dev": "nodemon --exec ts-node src/index.ts"
+    "dev": "nodemon --exec ts-node src/index.ts",
+    "build":"tsc"
   },
   "keywords": [],
   "author": "",
@@ -21,6 +22,7 @@
     "csv-parser": "^3.0.0",
     "debug": "^4.3.6",
     "dotenv": "^16.4.5",
+    "excel4node": "^1.8.2",
     "express": "^4.19.2",
     "express-fileupload": "^1.5.1",
     "express-jwt": "^8.4.1",
