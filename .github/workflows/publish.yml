@@ -1,19 +1,10 @@
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-
-# GitHub recommends pinning actions to a commit SHA.
-# To get a newer version, you will need to update the SHA.
-# You can also reference a tag or branch, but the action may change without warning.
-
 name: Publish Docker image
 
 on:
   push: 
-    branches: ["main", "development"]
+    branches: ["production", "development"]
   pull_request:
-    branches: ["main", "development"]
+    branches: ["production", "development"]
 
 jobs:
   create-docker-image:
@@ -29,32 +20,37 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.TOKEN_GITHUB }}
 
-      - name: Build and push Docker image
+      - name: Build and push Docker image for ${{ github.ref_name }}
         run: | 
-          docker build . --tag ghcr.io/cris590/ordencompra-back-v2:latest
-          docker push ghcr.io/cris590/ordencompra-back-v2:latest
+          if [[ "${{ github.ref_name }}" == "production" ]]; then
+            TAG="prod"
+          elif [[ "${{ github.ref_name }}" == "development" ]]; then
+            TAG="test"
+          fi
+          docker build . --tag ghcr.io/cris590/ordencompra-back-v2:$TAG
+          docker push ghcr.io/cris590/ordencompra-back-v2:$TAG
 
-  # deploy:
-  #   needs: create-docker-image
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Install sspass
-  #       run: sudo apt-get install -y sshpass
-  #     - name: SSH into server
-  #       run: |
-  #         sshpass -p ${{secrets.AUTH_PASS}} ssh -o StrictHostKeyChecking=no ${{secrets.AUTH_SERVER}} << EOF
-  #         cd /root/ordenes_compra/backend/
-  #         docker login ghcr.io -u cris590 -p ${{secrets.TOKEN_GITHUB}}
-  #         docker pull ghcr.io/cris590/ordencompra-back-v2:latest
-  #         docker stop ordencompra-back && docker rm ordencompra-back
-  #         docker run -d \
-  #           --name ordencompra-back \
-  #           -p 3000:3200 \
-  #           -w /app \
-  #           --restart always
-  #           --env-file .env \
-  #           ghcr.io/cris590/ordencompra-back-v2:latest
-  #         EOF
+  deploy:
+    needs: create-docker-image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
 
-    
+      - name: SSH into server for ${{ github.ref_name }}
+        run: |
+          if [[ "${{ github.ref_name }}" == "production" ]]; then
+            ENV_PATH="/services/prod/ordenes_compra/backend/"
+            CONTAINER_NAME="backend_ordenes_prod"
+          elif [[ "${{ github.ref_name }}" == "development" ]]; then
+            ENV_PATH="/services/test/ordenes_compra/backend/"
+            CONTAINER_NAME="backend_ordenes_test"
+          fi
 
+          sshpass -p ${{ secrets.AUTH_PASS }} ssh -o StrictHostKeyChecking=no ${{ secrets.AUTH_SERVER }} << EOF
+            cd $ENV_PATH
+            docker login ghcr.io -u cris590 -p ${{ secrets.TOKEN_GITHUB }}
+            docker pull ghcr.io/cris590/ordencompra-back-v2:${{ github.ref_name == 'production' ? 'prod' : 'test' }}
+            docker stop $CONTAINER_NAME && docker rm $CONTAINER_NAME
+            docker compose up -d
+          EOF
