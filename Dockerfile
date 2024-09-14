@@ -12,7 +12,11 @@ RUN npm run build
 # BUILD
 FROM node:20-alpine
 WORKDIR /usr/src/app/
-RUN apk add --no-cache
+
+# Instalar tzdata y configurar zona horaria
+RUN apk add --no-cache tzdata \
+    && cp /usr/share/zoneinfo/America/Bogota /etc/localtime \
+    && echo "America/Bogota" > /etc/timezone
 
 COPY package.json .
 RUN npm install
