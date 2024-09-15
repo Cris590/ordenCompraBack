@@ -17,7 +17,7 @@ const debug = Debug('hph-backend:server');
 
 const app = express();
 const corsOptions = {
-  origin: ['http://93.127.217.189', 'http://ordenesdev.brtsistema.com.co/','http://ordenes.brtsistema.com.co'],
+  origin: ['http://93.127.217.189','http://localhost:3200', 'http://ordenesdev.brtsistema.com.co/','http://ordenes.brtsistema.com.co'],
   methods: ['GET', 'POST', 'PUT', 'DELETE'], // Métodos permitidos
   allowedHeaders: ['Content-Type', 'Authorization'], // Encabezados permitidos
   credentials: true
@@ -25,7 +25,9 @@ const corsOptions = {
 
 
 dotenv.config();
-app.use(cors(corsOptions));
+app.use(cors());
+
+// app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 
 // view engine setup

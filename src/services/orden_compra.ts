@@ -313,11 +313,15 @@ export const usuariosOrdenesCoordinador= async (request: Request, res: Response)
             })
         
         }
-        let usuarios = await ordenCompraDao.obtenerUsuariosCoordinador(+req.auth.user.cod_entidad)
+        let codEntidad = +req.auth.user.cod_entidad
+        let usuarios = await ordenCompraDao.obtenerUsuariosCoordinador(codEntidad)
+        let entidadInfo = await generalService.getTableInformation('entidad','cod_entidad',codEntidad)
         
         res.send({
             error: 0,
-           usuarios
+           usuarios,
+           gestionada:(entidadInfo.length > 0) ? entidadInfo[0].gestionada : false,
+           fecha_gestionada:(entidadInfo.length > 0) ? entidadInfo[0].fecha_gestionada : false,
         })
 
     } catch (e: any) {

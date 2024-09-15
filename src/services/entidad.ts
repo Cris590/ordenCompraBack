@@ -334,9 +334,11 @@ export const obtenerUsuariosEntidad = async (req: Request, res: Response) => {
         let { codEntidad } = req.params
 
         let usuarios = await entidadDao.getUsuariosIdentidad(codEntidad)
+        let infoEntidad = await generalService.getTableInformation('entidad','cod_entidad',codEntidad)
         res.send({
             error: 0,
-            usuarios
+            usuarios,
+            gestionada: (infoEntidad.length > 0) ? infoEntidad[0].gestionada : 0
         })
 
     } catch (e: any) {
