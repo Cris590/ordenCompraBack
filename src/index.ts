@@ -16,9 +16,15 @@ import { excludeDaemonsMiddleware } from './middleware/jwt';
 const debug = Debug('hph-backend:server');
 
 const app = express();
+const corsOptions = {
+  origin: ['http://93.127.217.189', 'http://ordenesdev.brtsistema.com.co','http://ordenes.brtsistema.com.co'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE'], // Los métodos que deseas permitir
+  allowedHeaders: ['Content-Type', 'Authorization'], // Los encabezados permitidos
+};
+
 
 dotenv.config();
-app.use(cors());
+app.use(cors(corsOptions));
 // view engine setup
 app.use(express.json({limit: '5mb'}));
 app.use(express.urlencoded({limit: '5mb', extended: false }));
