@@ -39,6 +39,16 @@ export const productosCategoria = async (codCategoria: number) : Promise<IProduc
 
 }
 
+export const obtenerCategoriasActivas = async () : Promise<IProductoResumen[]> => {
+  return db
+    .select('c.*')
+    .from('categoria as c')
+    .join('producto as p', 'c.cod_categoria','p.cod_categoria')
+    .where('c.activo',1)
+    .andWhere('p.activo',1)
+
+}
+
 export const categoriasActivas = async (codCategoria: number) : Promise<IProductoResumen[]> => {
   return db
     .select('p.cod_producto','p.nombre','p.talla', 'p.activo','p.tiene_talla','p.tiene_color', 'c.nombre as categoria', 'c.sexo', 'p.activo')

@@ -24,7 +24,7 @@ export const getInfoContrato = (codEntidad:number): Promise<IEntidadResumen[]> =
 
 export const getEntidades = (): Promise<IEntidadResumen[]> => {
     return db
-        .select('e.cod_entidad', 'e.nombre','e.nit', 'e.activo')
+        .select('e.cod_entidad', 'e.nombre','e.nit', 'e.activo','e.gestionada')
         .from('entidad as e')
         .orderBy('e.activo', 'desc')
         .orderBy('e.cod_entidad')
@@ -40,7 +40,7 @@ export const crearCargoEntidad = async (data: { nombre: string, cod_categorias: 
 
 export const getInfoBasicaEntidad = (codEntidad: string): Promise<IEntidadInfoBasica[]> => {
     return db
-        .select('cod_entidad', 'nombre', 'activo','nit','info_contrato')
+        .select('cod_entidad', 'nombre', 'activo','nit','info_contrato','no_contrato','fecha_inicio','fecha_final')
         .from('entidad')
         .where('cod_entidad', codEntidad)
 }

@@ -33,7 +33,7 @@ export const obtenerCategorias = async (req: Request, res: Response) => {
 
 export const obtenerCategoriasActivas = async (req: Request, res: Response) => {
     try {
-        let categorias  = await generalService.getTableInformation('categoria','activo','1')
+        let categorias  = await categoriaDao.obtenerCategoriasActivas()
         let categoriaDetalle = categorias.map((categoria)=>({
             ...categoria,
             sexo:JSON.parse(categoria.sexo)
