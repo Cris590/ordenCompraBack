@@ -17,20 +17,17 @@ const debug = Debug('hph-backend:server');
 
 const app = express();
 const corsOptions = {
-  origin: ['http://93.127.217.189', 'http://ordenesdev.brtsistema.com.co','http://ordenes.brtsistema.com.co'],
-  methods: ['GET', 'POST', 'PUT', 'DELETE'], // Los métodos que deseas permitir
-  allowedHeaders: ['Content-Type', 'Authorization'], // Los encabezados permitidos
+  origin: ['http://93.127.217.189', 'http://ordenesdev.brtsistema.com.co/','http://ordenes.brtsistema.com.co'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE'], // Métodos permitidos
+  allowedHeaders: ['Content-Type', 'Authorization'], // Encabezados permitidos
+  credentials: true
 };
 
 
 dotenv.config();
 app.use(cors(corsOptions));
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', 'http://ordenesdev.brtsistema.com.co');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
-  next();
-});
+app.options('*', cors(corsOptions));
+
 // view engine setup
 app.use(express.json({limit: '5mb'}));
 app.use(express.urlencoded({limit: '5mb', extended: false }));
