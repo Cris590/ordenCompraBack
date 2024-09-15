@@ -82,7 +82,7 @@ export const getImagenesPorColor = (codProductoColor: number):Promise<{url:strin
 export const crearOrdenCompra = async (data: any) => {
     return db('orden').insert(data);
 }
-export const actualizarOrdenCompra = async (data: { ciudad:string, direccion:string}, codOrden: number) => {
+export const actualizarOrdenCompra = async (data: { ciudad:string, direccion:string, observaciones:string}, codOrden: number) => {
     return db("orden")
       .update(data)
       .where({ cod_orden: codOrden });

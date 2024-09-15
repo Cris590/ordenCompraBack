@@ -202,7 +202,8 @@ export const actualizarOrdenCompra = async (req: Request, res: Response) => {
 
         const {
             ciudad,
-            direccion
+            direccion,
+            observaciones
         } = req.body
 
         const { codOrdenCompra } = req.params
@@ -219,7 +220,8 @@ export const actualizarOrdenCompra = async (req: Request, res: Response) => {
     
         let ordenActualizar = {
            ciudad,
-           direccion
+           direccion,
+           observaciones
         }
         
         await ordenCompraDao.actualizarOrdenCompra( ordenActualizar , +codOrdenCompra)

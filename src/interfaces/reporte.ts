@@ -55,6 +55,6 @@ export interface IUsuarioReporteDetalle {
     talla?: string;
     cantidad?: number;
     categoria?: string;
-
+    descripcion_producto?:string;
     productos?:any
   }

@@ -47,6 +47,8 @@ export const reporteGeneralEntidad = async (req: Request, res: Response) => {
                     if (producto.tiene_color && producto.cod_color_producto) {
                         color = await generalService.getTableInformation('producto_color', 'cod_producto_color', producto.cod_color_producto)
                     }
+
+                    let productInfo = await generalService.getTableInformation('producto','cod_producto', producto.cod_producto)
                     let aux: IUsuarioReporteDetalle = {
                         ...usuario,
                         cod_producto: producto.cod_producto,
@@ -55,7 +57,8 @@ export const reporteGeneralEntidad = async (req: Request, res: Response) => {
                         talla: producto.tiene_talla ? producto.talla : 'NA',
                         cantidad: producto.cantidad,
                         categoria: producto.categoria,
-                        fecha_creacion:(usuario.fecha_creacion) ? formatDate(usuario.fecha_creacion) : undefined
+                        fecha_creacion:(usuario.fecha_creacion) ? formatDate(usuario.fecha_creacion) : undefined,
+                        descripcion_producto:(productInfo.length>0) ? productInfo[0].descripcion : ''
                     }
                     delete aux.productos
                     arreglo.push(aux)
@@ -68,7 +71,8 @@ export const reporteGeneralEntidad = async (req: Request, res: Response) => {
                     color: '',
                     talla: '',
                     cantidad: 0,
-                    categoria: ''
+                    categoria: '',
+                    descripcion_producto:''
                 }
                 delete aux.productos
                 arreglo.push(aux)

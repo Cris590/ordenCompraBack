@@ -35,6 +35,8 @@ export const reporteEntidad = async (codEntidad: number): Promise<IUsuarioOrdenP
         'o.ciudad',
         'u2.cedula as cedula_creador',
         'u2.nombre as nombre_creador',
+        'e.no_orden',
+        'o.observaciones',
         db.raw(`
             CASE
               WHEN o.direccion IS NULL OR o.ciudad IS NULL THEN 'INCOMPLETA'

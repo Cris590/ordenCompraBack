@@ -17,7 +17,8 @@ db.on('query', (message: any) => logDatabasePYS.info(formatMessages.queryFormat(
 
 export const getInfoContrato = (codEntidad:number): Promise<IEntidadResumen[]> => {
     return db
-        .select('e.cod_entidad', 'e.nombre','e.nit', 'e.info_contrato','no_contrato','fecha_inicio','fecha_final', 'gestionada','fecha_gestionada','entrega_bonos')
+        .select('e.cod_entidad', 'e.nombre','e.nit', 'e.info_contrato','no_contrato','fecha_inicio','fecha_final', 
+            'gestionada','fecha_gestionada','entrega_bonos', 'no_orden')
         .from('entidad as e')
         .where('e.cod_entidad',codEntidad)
 }

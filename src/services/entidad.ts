@@ -277,6 +277,8 @@ const limpiarUsuario = async (usuarioEntidad: IUsuarioCarga, codEntidad: number)
                     if (usuarioEntidad[key].length === 0) {
                         usuarioLimpio = null
                     };
+
+                    usuarioEntidad[key] = usuarioEntidad[key].trim()
                     break;
                 case 'sexo':
                     if (!["M", "F"].includes(usuarioEntidad[key]) || usuarioEntidad[key].length === 0) {
@@ -297,7 +299,7 @@ const limpiarUsuario = async (usuarioEntidad: IUsuarioCarga, codEntidad: number)
                     if(usuarioEntidad[key].length === 0){
                         usuarioLimpio = null
                     }else{
-                        let cargoEntidad = await entidadDao.cargoEntidadPorNombre(codEntidad, usuarioEntidad[key])
+                        let cargoEntidad = await entidadDao.cargoEntidadPorNombre(codEntidad, usuarioEntidad[key].trim())
                         if(cargoEntidad.length === 0){
                             usuarioLimpio = null
                         }else{
