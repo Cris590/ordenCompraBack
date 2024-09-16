@@ -1,8 +1,7 @@
-version: '3.8'
 services:
   app:
-    #build: .
-    image: ghcr.io/cris590/ordencompra-back-v2
+    build: .
+    #image: ghcr.io/cris590/ordencompra-back-v2
     container_name: backend_ordenes
     ports:
       - "3200:3000"
@@ -10,6 +9,7 @@ services:
       # - .:/usr/src/app
       # - /usr/src/app/node_modules
       - ./uploads:/usr/src/app/uploads
+      - ./documents_storage:/usr/src/app/documents_storage
     env_file:
       - .env 
     command: npm start

@@ -6,10 +6,13 @@ import path from 'path';
 import * as generalService from './general'
 import * as reporteDao from '../databases/reporte'
 
-import { IUsuarioProductosFormateados, IUsuarioReporteDetalle } from '../interfaces/reporte';
+import { IProductoOrden, IUsuarioProductosFormateados, IUsuarioReporteDetalle } from '../interfaces/reporte';
 
 import { createExcelFile } from '../helpers/crearExcel';
 import { formatDate } from '../helpers/formatDate';
+import { generateRandomNumber, getFileBase64 } from '../helpers/general';
+import { crearDocumentoPdfWK } from '../helpers/createDocumentPdf';
+
 
 
 
@@ -104,11 +107,6 @@ export const reporteGeneralEntidad = async (req: Request, res: Response) => {
             });
         });
 
-        // res.send({
-        //     error: 0,
-        //     reporte: arreglo
-        // })
-
     } catch (e: any) {
         console.log('***********')
         console.log(e)
@@ -117,6 +115,107 @@ export const reporteGeneralEntidad = async (req: Request, res: Response) => {
             msg: {
                 icon: 'error',
                 text: 'Error al consultar los productos'
+            }
+        })
+    }
+
+}
+
+export const descargarBonosUsuario = async (req: Request, res: Response) => {
+    try {
+
+        let request = req as RequestToken
+        const { codEntidad } = req.params
+        const { cod_entidad, cod_perfil } = request.auth.user
+        if(!(cod_perfil === 1 || (cod_perfil === 2 && +codEntidad === cod_entidad ))){
+            return res.send({
+                error:1,
+                msg:{
+                    icon:'error',
+                    text:'No tiene permisos para descargar este reporte'
+                }
+            })
+        }
+
+        
+        let logo = await getFileBase64(path.join(process.cwd(), `assets/logo.png`))
+        let usuariosEntidadResult = await reporteDao.infoBonosEntidad(+codEntidad)
+        if(usuariosEntidadResult.length === 0) {
+            return res.send({
+                error:1,
+                msg:{
+                    icon:'error',
+                    text:'No hay bonos para esta entidad'
+                }
+            })
+        }
+        
+        let usuarios = usuariosEntidadResult.map((usuario)=>{
+
+            let productosAux = JSON.parse(usuario.productos) as IProductoOrden[]
+
+            let productos = productosAux.reduce((acc, producto) => {
+                const { cod_producto, nombre, cantidad, categoria } = producto;
+              
+                const existente = acc.find(item => item.cod_producto === cod_producto);
+              
+                if (existente) {
+                  existente.cantidad += cantidad;
+                } else {
+                  acc.push({ cod_producto, nombre, categoria, cantidad });
+                }
+              
+                return acc;
+              }, [] as { cod_producto: number; nombre: string; categoria: string; cantidad: number }[]);
+
+            return {
+                nombre_entidad: usuario.nombre_entidad,
+                no_contrato: usuario.no_contrato,
+                fecha_aprobacion: formatDate(usuario.fecha_gestionada),
+                nombre: usuario.nombre,
+                cedula: usuario.cedula,
+                sexo: usuario.sexo,
+                logo,
+                productos
+            }
+        })
+
+        let data = {
+            usuarios
+        }
+
+        let nombre =`bono_${generateRandomNumber(7)}` 
+        await crearDocumentoPdfWK(data, 'bono', nombre)
+
+        const filePath = path.join(process.cwd(), `documents_storage/storage/`, `${nombre}.pdf`);
+        
+        res.download(filePath, (err) => {
+            if (err) {
+                return res.send({
+                    error: 1,
+                    msg: {
+                        icon: 'error',
+                        text: 'Error al generar el archivo'
+                    }
+                })
+            }
+
+            // Borra el archivo después de enviarlo
+            fs.unlink(filePath, (unlinkErr) => {
+                if (unlinkErr) {
+                    console.error('Error al borrar el archivo:', unlinkErr);
+                }
+            });
+        });
+
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg: {
+                type: 'error',
+                message: 'Error al crear bonos'
             }
         })
     }

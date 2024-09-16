@@ -4,23 +4,24 @@ export interface IUsuarioOrdenPorEntidadSql {
     sexo: string;
     email: string;
     cargo_entidad: string;
-    entidad:string;
-    nit:string;
-    productos?: string ;  // Puede ser null si no hay un pedido
-    fecha_creacion?: string ;
-    direccion?: string ;
-    ciudad?: string ;
-    cedula_creador?: string ;  
-    nombre_creador?: string ;
+    entidad: string;
+    nit: string;
+    productos?: string;  // Puede ser null si no hay un pedido
+    fecha_creacion?: string;
+    direccion?: string;
+    ciudad?: string;
+    cedula_creador?: string;
+    nombre_creador?: string;
+    no_contrato?: string;
 }
 
-export interface IUsuarioProductosFormateados extends Omit<IUsuarioOrdenPorEntidadSql, 'productos'>{
-    productos?:IProductoOrden[]
+export interface IUsuarioProductosFormateados extends Omit<IUsuarioOrdenPorEntidadSql, 'productos'> {
+    productos?: IProductoOrden[]
 }
 
 
-interface IProductoOrden{
-    
+export interface IProductoOrden {
+
     cod_producto: number;
     nombre: string;
     talla: string;
@@ -46,15 +47,26 @@ export interface IUsuarioReporteDetalle {
     fecha_creacion?: string;
     direccion?: string;
     ciudad?: string;
-    cedula_creador?: string ;
-    nombre_creador?: string ;
-    orden_completa?: number; 
+    cedula_creador?: string;
+    nombre_creador?: string;
+    orden_completa?: number;
     cod_producto?: number;
     nombre_producto?: string;
     color?: string;
     talla?: string;
     cantidad?: number;
     categoria?: string;
-    descripcion_producto?:string;
-    productos?:any
-  }
+    descripcion_producto?: string;
+    productos?: any
+}
+
+export interface IUsuarioBonos {
+    cedula: string,
+    nombre: string,
+    nombre_entidad: string,
+    no_contrato: string,
+    sexo: string,
+    fecha_gestionada: string,
+    cod_orden: string,
+    productos: string,
+}

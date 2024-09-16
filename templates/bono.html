@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+        <style type="text/css">
+            @page {
+                size: A4;
+
+            }
+
+            @media print {
+
+                html,
+                body {
+                    width: 210mm;
+                    height: 320mm;
+                    margin: 5px 30px 30px 30px;
+                }
+            }
+
+            body {
+                /* margin: 30px 30px 30px 30px; */
+                width: 98%;
+                font-size: 10px;
+                line-height: 12px;
+                font-family: 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif;
+                color: rgb(33, 33, 33);
+                align-self: center;
+                margin: 0;
+                padding: 1rem
+            }
+
+            .page {
+                margin: 0rem 1rem 1rem 1rem;
+            }
+
+            .information-block {
+                page-break-inside: avoid;
+                /* break-inside: avoid; */
+            }
+
+            .logo-img-container {
+                width: 120px;
+                height: 100%;
+                margin-left: 10px;
+                margin-right: 10px;
+
+            }
+
+            .logo-img-container img {
+
+                width: 100%;
+                height: 100%;
+            }
+
+            .header_container {
+                display: grid;
+                grid-template-columns: 20% 80%;
+                width: 100%;
+            }
+
+            .font-bold {
+                font-weight: bold;
+            }
+
+            .my-4 {
+                margin-top: 4px;
+                margin-bottom: 4px;
+            }
+
+            .text-center {
+                text-align: center;
+            }
+
+            .underline {
+                text-decoration: underline;
+                padding: 0px 10px 0px 10px;
+            }
+
+            .text-md{
+                font-size: medium;
+            }
+
+            .container_entidad {
+                padding: 4px 10px;
+                align-items: center;
+                text-align: center;
+            }
+
+            .container_tiendas {
+                display: flex;
+                justify-content: center;
+            }
+
+            .card_border {
+                border: 2px solid gray;
+                padding: 5px 12px;
+                margin: 10px;
+            }
+
+            .table-grid {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                /* Dos columnas de igual ancho */
+                /* gap: 10px; */
+                /* Espacio entre columnas y filas */
+                justify-content: center;
+                /* Centrar horizontalmente */
+                align-items: center;
+                /* Centrar verticalmente */
+            }
+
+            .table-grid-item {
+                padding: 3px;
+                border: 1px solid #ddd;
+                /* Bordes para simular una tabla */
+                text-align: center;
+                /* Centrar el texto dentro de cada celda */
+            }
+
+            .header-table {
+                background-color: #dfdada77;
+                font-weight: bold;
+            }
+
+            .continer_firmas {
+                display: flex;
+                flex-direction: column;
+            }
+
+            .firma {
+                border-top: 1px solid black;
+                padding: 2px 6px;
+                width: 150px;
+                font-weight: bold;
+                margin-top: 40px;
+            }
+
+            .espacio_firma {
+                width: 140px;
+                height: 10px;
+                border-bottom: 1px solid black;
+                margin: 0px 5px;
+            }
+
+            .espacio_check {
+                width: 20px;
+                height: 7px;
+                border-bottom: 1px solid black;
+                margin: 0px 2px;
+            }
+
+            .huella {
+                width: 70px;
+                height: 70px;
+                border: 2px solid black;
+                margin: 3px;
+            }
+
+            .card_usuario {
+                padding: 5px;
+                background-color: rgba(233, 234, 235, 0.86);
+                border: 1px solid grey;
+                height: 1000px;
+            }
+        </style>
+
+
+
+    </head>
+
+<body>
+    <div class="page">
+        {{#each usuarios}}
+        <div class="card_usuario information-block ">
+            <div class="header_container">
+                <div class="logo-img-container">
+                    <img class="logo-img congrats-image" src={{logo}}>
+                </div>
+                <div>
+                    <p class="font-bold text-center text-md">INVERSIONES BRT SAS</p>
+                    <P class="font-bold text-center text-md">NIT : 901.474.311-8 </P>
+                </div>
+            </div>
+
+            <br>
+            <div class="container_entidad">
+                <span>NOMBRE DE LA ENTIDAD </span> <span class="underline"> {{nombre_entidad}}</span>
+                <span>NÚMERO DE CONTRATO </span> <span class="underline"> {{no_contrato}}</span>
+            </div>
+
+            <br>
+            <br>
+            <div>
+                <span>FECHA DE ELABORACION:</span> <span class="underline">{{fecha_aprobacion}}</span>
+            </div>
+
+            <div class="card_border">
+                <p>Con el cual se acredita al señor(a) <span class="underline">{{nombre}}</span>,
+                    identificado(a) con la C.C. <span>{{cedula}}</span>, para retirar en nuestro almacén el Kit de
+                    Vestuario de Calle asignado.El beneficiario podrá realizar la recolección en cualquiera de las
+                    siguientes tiendas, de lunes a sábado en el horario de 10:00 a.m. a 6:00 p.m y domingos de 11:00
+                    a.m. a 4:00 p.m.
+                </p>
+            </div>
+
+            {{#if (compareSex sexo 'M') }}
+            <div class="container_tiendas">
+                <div class="card_border">
+                    <p class="font-bold underline text-center">TIENDAS ROPA PARA CABALLERO</p>
+                    <P class="text-center">BARONATTO CENTRO - CALLE 17 N.º 8 - 30</P>
+                    <P class="text-center">BARONATTO RESTREPO - CARRERA 19 N.º 16 - 31 SUR</P>
+                </div>
+
+            </div>
+            {{/if}}
+
+            {{#if (compareSex sexo 'S') }}
+            <div class="container_tiendas">
+                <div class="card_border">
+                    <p class="font-bold underline text-center">TIENDAS ROPA PARA DAMA</p>
+                    <p class="text-center">KASTTA FASHION STORE - CARRERA 8 N.º 12B– 92</p>
+                    <p class="text-center"> KASTTA FASHION STORE - CALLE 17 N.º 8 – 09</p>
+                    <p class="text-center">ZATY COMPANY CENTRO - CARRERA 8 Nº 12 - 09</p>
+                    <p class="text-center">ZATY COMPANY CENTRO - CARRERA 7 Nº 13 - 35</p>
+                    <p class="text-center">ZATY COMPANY C.C TITAN PLAZA - AVENDA BOYACA POR CALLE 80 LOCAL 1 - 53</p>
+                    <p class="text-center">ZATY COMPANY C.C GALERIAS PLAZA 54 - CARRERA 24 Nº 53 - 73 LOCAL 106</p>
+                    <p class="text-center">ZATY COMPANY TINTAL PLAZA - AVENIDAD CIUDAD DE CALI CON AVENIDA DE LAS
+                        AMERICAS LOCAL 269</p>
+                    <p class="text-center">KANELA CARRERA 45 Nº 73 - 30 SUR</p>
+                    <p class="text-center">KANELA BOITA CALLE 45 Nº 72 M 62 SUR</p>
+                    <p class="text-center">KANELA FRAGUA CARRERA 68D Nº 37G - 79 SUR</p>
+                    <p class="text-center">KANELA PARAISO CARRERA 27B Nº 71G 17 SUR</p>
+                </div>
+
+            </div>
+            {{/if}}
+            <br>
+            <div class="card-border">
+                El Kit de dotación de vestuario de calle que puede adquirir un beneficiario está compuesto
+                por una selección de prendas diseñadas para brindar comodidad y estilo en actividades diarias.
+                Este conjunto incluye:
+            </div>
+            <br>
+
+            <div class="table-grid">
+                <div class="table-grid-item header-table">CATEGORIA</div>
+                <div class="table-grid-item header-table">PRODUCTO</div>
+                <div class="table-grid-item header-table">CANTIDAD</div>
+                {{#each productos}}
+                <div class="table-grid-item">{{categoria}}</div>
+                <div class="table-grid-item">{{nombre}}</div>
+                <div class="table-grid-item">{{cantidad}}</div>
+                {{/each}}
+            </div>
+
+            <br>
+            <br>
+            <div>
+                <p>ESTA AUTORIZACIÓN ES PERSONAL E INTRANSFERIBLE, NO REDIMIBLE POR DINERO, CANJEABLE ÚNICAMENTE POR
+                    VESTUARIO Y CALZADO DE LABOR PARA FUNCIONARIOS DE LA ENTIDAD CORRESPOENDIENTE EL PORTADOR DEBE
+                    PRESENTAR
+                    LA CÉDULA DE CIUDADANÍA AL ADMINISTRADOR DE LA TIENDA, Y UNA VEZ RECIBIDA LA DOTACIÓN, FIRMAR ESTE
+                    DOCUMENTO CON NÚMERO DE CÉDULA, EL CUAL QUEDARÁ EN PODER DE INVERSIONES BRT SAS.
+                    EN CASO DE PÉRDIDA, COMUNICARSE AL TELÉFONO: <span class="font-bold">601 272 17 33</span>,
+                    REPORTANDO EL NÚMERO DEL BONO Y LA ENTIDAD A
+                    LA CUAL PERTENECE PARA PROCEDER A SU BLOQUEO. PARA OBTENER UNA COPIA, SE DEBERÁ PRESENTAR DENUNCIO
+                    DE
+                    PÉRDIDA ANTE LAS AUTORIDADES COMPETENTES.
+                </p>
+                <p class="font-bold text-center"> BOGOTÁ CADUCIDAD 4 MESES</p>
+            </div>
+
+            <br><br>
+
+            <div class="table-grid">
+
+                <div class="continer_firmas">
+                    <p class="firma"> FIRMA AUTORIZADO</p>
+                    <p class="firma"> FIRMA VENDEDOR</p>
+                </div>
+
+                <div class="continer_firmas">
+                    <p class="firma"> FIRMA VENDEDOR</p>
+                    <div style="display: flex; flex-direction: row;  margin-bottom: 10px;">
+                        <span>C.C.</span><div class="espacio_firma"></div>
+                    </div>
+                
+                    <div style="display: flex; flex-direction: row;">
+                        <span class="font-bold">BUENO:</span>
+                        <div class="espacio_check"></div>
+                        <span class="font-bold">REGULAR:</span>
+                        <div class="espacio_check"></div>
+                        <span class="font-bold">MALO:</span>
+                        <div class="espacio_check"></div>
+                    </div>
+                    <p class="font-bold"> INDICATIVO DE ATENCIÓN</p>
+                </div>
+
+                <div>
+                    <p>HUELLA</p>
+                    <div class="huella"></div>
+                </div>
+            </div>
+
+            <hr>
+            <p class="text-center">CARRERA 18 No. 16-44 SUR PISO 3 TELEFONO : 4559328-3136721991, CORREO:
+                inverbarsas@gmail.com</p>
+
+        </div>
+        {{/each}}
+    </div>
+</body>
+
+</html>

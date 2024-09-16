@@ -4,7 +4,7 @@ import config from '../../knexfile';
 import { logDatabasePYS } from '../helpers/logger';
 import * as formatMessages from '../helpers/formatLogMessages';
 import { ITallaje } from '../interfaces/tallaje';
-import { IUsuarioOrdenPorEntidadSql } from '../interfaces/reporte';
+import { IUsuarioBonos, IUsuarioOrdenPorEntidadSql } from '../interfaces/reporte';
 
 const db = Knex(config.development);
 
@@ -21,6 +21,7 @@ export const reporteEntidad = async (codEntidad: number): Promise<IUsuarioOrdenP
         'u.email',
         'ce.nombre as cargo_entidad',
         'e.nombre as entidad', 
+        'e.no_contrato',
         'e.nit',
         db.raw(`
             CASE
@@ -51,5 +52,26 @@ export const reporteEntidad = async (codEntidad: number): Promise<IUsuarioOrdenP
       .leftJoin('usuario as u2', 'o.cod_usuario_creacion', 'u2.cod_usuario')
       .where('u.cod_entidad', codEntidad)
       .andWhere('u.cod_perfil', 3);
+}
+
+export const infoBonosEntidad = async (codEntidad: number): Promise<IUsuarioBonos[]> => {
+  return db.select(
+      'u.cedula',
+      'u.nombre',
+      'e.nombre as nombre_entidad', 
+      'e.no_contrato',
+      'u.sexo',
+      'e.fecha_gestionada',
+      'o.cod_orden',
+      'o.productos',
+    )
+    .from('usuario as u')
+    .join('cargo_entidad as ce', 'u.cod_cargo_entidad', 'ce.cod_cargo_entidad')
+    .join('entidad as e', 'e.cod_entidad','u.cod_entidad')
+    .leftJoin('orden as o', 'o.cod_usuario', 'u.cod_usuario')
+    .leftJoin('usuario as u2', 'o.cod_usuario_creacion', 'u2.cod_usuario')
+    .where('u.cod_entidad', codEntidad)
+    .andWhere('e.gestionada', 1)
+    .andWhere('u.cod_perfil', 3);
 }
 
