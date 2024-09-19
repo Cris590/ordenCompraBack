@@ -43,7 +43,6 @@ INSERT INTO base_datos.menu (label,route,icono,perfil,orden,activo,visible) VALU
 	 ('Productos','productos','lo','[1]',3,1,1),
 	 ('Tallajes','tallajes','lo','[1]',4,1,1),
 	 ('Entidades','entidades','lo','[1]',5,1,1),
-	 ('Reportes','reportes','lo','[1,2]',6,1,1),
 	 ('Productos','producto','io','[2,3]',7,1,0),
 	 ('Empty','empty','io','[2,3]',7,1,0),
 	 ('Cart','cart','io','[2,3]',7,1,0),
@@ -136,7 +135,7 @@ CREATE TABLE base_datos.usuario (
 
 INSERT INTO base_datos.usuario (email,nombre,password,activo,cod_perfil,cod_entidad,sexo,cedula,cod_cargo_entidad) VALUES
 	 ('cristian.aragon@pysltda.com','Cristian Aragón','$2a$10$0SajEvYOrqnXwp3PryKPFe6bxUlkZQg3o4wUD0Z6R3HDZxET2AwmK',1,1,NULL,NULL,'1013661443',NULL),
-	 ('cristian.aragon@pysltda.com','Pablo Emilio','$2a$10$.u5C80GcjrOAMLnmq/TFr.yjHhc9.QwDUrcknS7J9vkrswzRYCu4e',1,1,NULL,NULL,'79431752',NULL);
+	 ('cristian.aragon@pysltda.com','Admin','$2a$10$.u5C80GcjrOAMLnmq/TFr.yjHhc9.QwDUrcknS7J9vkrswzRYCu4e',1,1,NULL,NULL,'901474311',NULL);
 
 
 CREATE TABLE base_datos.variable (
