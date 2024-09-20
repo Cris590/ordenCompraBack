@@ -9,6 +9,13 @@ RUN npm run build
 
 # Etapa final con Puppeteer y Chromium
 FROM node:20-alpine
+
+# Instalar tzdata para manejar zonas horarias
+RUN apk add --no-cache tzdata
+
+# Configurar la zona horaria a America/Bogota (Colombia)
+ENV TZ=America/Bogota
+
 WORKDIR /usr/src/app/
 
 # Instalar dependencias para Puppeteer y Chromium
