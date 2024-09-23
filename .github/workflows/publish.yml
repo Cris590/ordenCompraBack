@@ -20,19 +20,10 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.TOKEN_GITHUB }}
 
-      - name: Determine Docker Tag
-        id: docker-tag
-        run: |
-          if [ "${{ github.ref_name }}" == "production" ]; then
-            echo "TAG=prod" >> $GITHUB_ENV
-          elif [ "${{ github.ref_name }}" == "development" ]; then
-            echo "TAG=test" >> $GITHUB_ENV
-          fi
-
       - name: Build and push Docker image
         run: |
-          docker build . --tag ghcr.io/cris590/ordencompra-back-v2:${{ env.TAG }}
-          docker push ghcr.io/cris590/ordencompra-back-v2:${{ env.TAG }}
+          docker build . --tag ghcr.io/cris590/ordencompra-back-v2-${{ github.ref_name }}
+          docker push ghcr.io/cris590/ordencompra-back-v2-${{ github.ref_name }}
 
   deploy:
     needs: create-docker-image
@@ -41,25 +32,8 @@ jobs:
       - name: Install sshpass
         run: sudo apt-get install -y sshpass
 
-      - name: Determine Deployment Environment
-        id: deploy-env
-        run: |
-          if [ "${{ github.ref_name }}" == "production" ]; then
-            echo "ENV_PATH=/services/prod/ordenes_compra/backend/" >> $GITHUB_ENV
-            echo "CONTAINER_NAME=backend_ordenes_prod" >> $GITHUB_ENV
-            echo "TAG=prod" >> $GITHUB_ENV
-          elif [ "${{ github.ref_name }}" == "development" ]; then
-            echo "ENV_PATH=/services/test/ordenes_compra/backend/" >> $GITHUB_ENV
-            echo "CONTAINER_NAME=backend_ordenes_test" >> $GITHUB_ENV
-            echo "TAG=test" >> $GITHUB_ENV
-          fi
-
       - name: SSH into server and deploy
         run: |
           sshpass -p ${{ secrets.AUTH_PASS }} ssh -o StrictHostKeyChecking=no ${{ secrets.AUTH_SERVER }} << EOF
-            cd ${{ env.ENV_PATH }}
-            docker login ghcr.io -u cris590 -p ${{ secrets.TOKEN_GITHUB }}
-            docker pull ghcr.io/cris590/ordencompra-back-v2:${{ env.TAG }}
-            docker stop ${{ env.CONTAINER_NAME }} && docker rm ${{ env.CONTAINER_NAME }}
-            docker compose up -d
+          sh  /services/deploy.sh ${{ github.ref_name }}      
           EOF
