@@ -4,7 +4,7 @@ import * as userDao from '../databases/users';
 import { logErrorApp } from '../helpers/logger';
 import { IUser } from '../interfaces/user';
 
-export const authenticate = async (cedula: string, password: string,): Promise<{ error: number; token?: string, menu?: any, user?: IUser }> => {
+export const authenticate = async (cedula: string, password: string,): Promise<{ error: number; token?: string, menu?: any, user?: IUser , msg?:any }> => {
     try {
         const user = await userDao.getUser(cedula);
         let loginSuccess = {
@@ -12,6 +12,17 @@ export const authenticate = async (cedula: string, password: string,): Promise<{
             message: 'Error en el inicio de sesión'
         };
         if (!!user) {
+
+            if(user.cod_perfil === 3 &&  (!user.entrega_bonos || user.entrega_bonos !== "VIRTUAL")){
+                return {
+                    error:1,
+                    msg:{
+                        icon:'error',
+                        text:'La entidad no ha activado su usuario'
+                    }
+                }
+            }
+
             let menu = await getMenu(user.cod_perfil)
 
             loginSuccess.message = 'Invalid credentials: ERP'

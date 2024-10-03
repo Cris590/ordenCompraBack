@@ -197,55 +197,6 @@ export const crearOrdenCompra = async (req: Request, res: Response) => {
 
 }
 
-export const actualizarOrdenCompra = async (req: Request, res: Response) => {
-    try {
-
-        const {
-            ciudad,
-            direccion,
-            observaciones
-        } = req.body
-
-        const { codOrdenCompra } = req.params
-        if(!ciudad  || !direccion || !codOrdenCompra){
-            return res.send({
-                error:1,
-                msg:{
-                icon:'error',
-                text:'Los parametros ciudad y dirección son obligatorios'
-            }
-            })
-        }
-
-    
-        let ordenActualizar = {
-           ciudad,
-           direccion,
-           observaciones
-        }
-        
-        await ordenCompraDao.actualizarOrdenCompra( ordenActualizar , +codOrdenCompra)
-        res.send({
-            error:0,
-            msg:{
-                icon:'success',
-                text:'Orden actualizada correctamente'
-            } 
-        })
-
-    } catch (e: any) {
-        console.log('***********')
-        console.log(e)
-        res.send({
-            error: 1,
-            msg:{
-                icon:'error',
-                text:'Error al crear la categoria'
-            } 
-        })
-    }
-
-}
 
 export const validarOrdenUsuario = async (request: Request, res: Response) => {
     try {
@@ -277,13 +228,19 @@ export const validarOrdenUsuario = async (request: Request, res: Response) => {
         }
 
         let usuario = await ordenCompraDao.obtenerInfoUsuario(+codUsuario)
+        let usuarioCoordinador = await ordenCompraDao.obtenerCoordinadorDeEntidad(req.auth.user.cod_entidad)
+
+        let usuarioConsolidado = {
+            ...usuario[0],
+            ...usuarioCoordinador[0]
+        }
 
         res.send({
             error: 0,
             existe: (orden.length > 0) ? 1 : 0,
             orden:orden[0],
             categorias:categoriaValidacion,
-            usuario:usuario[0]
+            usuario:usuarioConsolidado
 
         })
 
@@ -324,6 +281,7 @@ export const usuariosOrdenesCoordinador= async (request: Request, res: Response)
            usuarios,
            gestionada:(entidadInfo.length > 0) ? entidadInfo[0].gestionada : false,
            fecha_gestionada:(entidadInfo.length > 0) ? entidadInfo[0].fecha_gestionada : false,
+           entrega_bonos:(entidadInfo.length > 0) ? entidadInfo[0].entrega_bonos : false,
         })
 
     } catch (e: any) {

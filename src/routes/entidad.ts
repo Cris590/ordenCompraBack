@@ -24,3 +24,5 @@ router.post('/cargar_usuarios',entidadService.cargarUsuariosEntidad)
 router.post('/crear_usuario_entidad',entidadService.crearUsuarioEntidad)
 router.put('/editar_usuario_entidad/:codUsuario',entidadService.editarUsuarioEntidad)
 
+router.get('/prueba_correo', entidadService.pruebasCorreo);
+

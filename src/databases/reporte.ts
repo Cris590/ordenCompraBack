@@ -29,21 +29,20 @@ export const reporteEntidad = async (codEntidad: number): Promise<IUsuarioOrdenP
               ELSE 'FEMENINO'
             END AS sexo
           `),
+        db.raw(`
+          CASE
+            WHEN o.cod_orden IS NULL THEN 'INCOMPLETA'
+            ELSE 'COMPLETA'
+          END AS orden_completa
+        `),
         'o.cod_orden',
         'o.productos',
-        'o.fecha_creacion',
-        'o.direccion',
-        'o.ciudad',
+        db.raw("CONVERT_TZ(o.fecha_creacion, '+00:00', '-05:00') AS fecha_creacion"),
+        'e.direccion',
+        'e.ciudad',
         'u2.cedula as cedula_creador',
         'u2.nombre as nombre_creador',
-        'e.no_orden',
-        'o.observaciones',
-        db.raw(`
-            CASE
-              WHEN o.direccion IS NULL OR o.ciudad IS NULL THEN 'INCOMPLETA'
-              ELSE 'COMPLETA'
-            END AS orden_completa
-          `)
+        'e.no_orden'
       )
       .from('usuario as u')
       .join('cargo_entidad as ce', 'u.cod_cargo_entidad', 'ce.cod_cargo_entidad')

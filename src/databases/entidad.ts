@@ -3,7 +3,7 @@ import Knex from 'knex';
 import config from '../../knexfile';
 import { logDatabasePYS } from '../helpers/logger';
 import * as formatMessages from '../helpers/formatLogMessages';
-import { IEntidadInfoBasica, IEntidadResumen } from '../interfaces/entidad';
+import { IEntidadInfoBasica, IEntidadResumen, IUsuarioEntidad } from '../interfaces/entidad';
 
 const db = Knex(config.development);
 
@@ -18,14 +18,14 @@ db.on('query', (message: any) => logDatabasePYS.info(formatMessages.queryFormat(
 export const getInfoContrato = (codEntidad:number): Promise<IEntidadResumen[]> => {
     return db
         .select('e.cod_entidad', 'e.nombre','e.nit', 'e.info_contrato','no_contrato','fecha_inicio','fecha_final', 
-            'gestionada','fecha_gestionada','entrega_bonos', 'no_orden')
+            'gestionada','fecha_gestionada','entrega_bonos', 'no_orden','direccion','ciudad')
         .from('entidad as e')
         .where('e.cod_entidad',codEntidad)
 }
 
 export const getEntidades = (): Promise<IEntidadResumen[]> => {
     return db
-        .select('e.cod_entidad', 'e.nombre','e.nit', 'e.activo','e.gestionada','e.fecha_gestionada')
+        .select('e.cod_entidad', 'e.nombre','e.nit', 'e.activo','e.gestionada','e.fecha_gestionada','e.entrega_bonos')
         .from('entidad as e')
         .orderBy('e.activo', 'desc')
         .orderBy('e.fecha_gestionada', 'asc')
@@ -55,9 +55,20 @@ export const actualizarCargoEntidad = async (data: IEntidadInfoBasica, codCargoE
     return await db('cargo_entidad').where('cod_cargo_entidad', codCargoEntidad).update(data)
 }
 
-export const getUsuariosIdentidad= (codEntidad: string): Promise<IEntidadInfoBasica[]> => {
+export const getUsuariosEntidadCorreo= (codEntidad: string | number): Promise<IUsuarioEntidad[]> => {
     return db
-        .select('u.cod_usuario','u.email','u.nombre','u.activo','u.sexo','u.cedula','u.cod_cargo_entidad', 'o.cod_orden','c.nombre as cargo_entidad')
+        .select('u.email','u.nombre','u.cedula','u.raw_pass as pasword')
+        .from('usuario as u')
+        .where('u.cod_entidad', codEntidad)
+        .andWhere('u.cod_perfil',3)
+        .orderBy('u.activo')
+        .orderBy('u.cod_usuario','desc')
+}
+
+export const getUsuariosIdentidad= (codEntidad: string | number): Promise<IUsuarioEntidad[]> => {
+    return db
+        .select('u.cod_usuario','u.email','u.nombre','u.activo','u.sexo','u.cedula','u.cod_cargo_entidad',
+             'o.cod_orden', db.raw("CONCAT(c.nombre, ' - LOTE ', c.lote) as cargo_entidad"))
         .from('usuario as u')
         .join('cargo_entidad as c','c.cod_cargo_entidad','u.cod_cargo_entidad')
         .leftJoin('orden as o','u.cod_usuario','o.cod_usuario')
@@ -66,6 +77,8 @@ export const getUsuariosIdentidad= (codEntidad: string): Promise<IEntidadInfoBas
         .orderBy('u.activo')
         .orderBy('u.cod_usuario','desc')
 }
+
+
 
 export const getUsuarioCoordinador= (codEntidad: string): Promise<IEntidadInfoBasica[]> => {
     return db
@@ -81,15 +94,16 @@ export const getUsuarioCoordinador= (codEntidad: string): Promise<IEntidadInfoBa
 
 export const cargosEntidadResumen= (codEntidad: string): Promise<{cod_cargo_entidad:number, nombre:string}[]> => {
     return db
-        .select('cod_cargo_entidad','nombre')
+        .select('cod_cargo_entidad','nombre','lote')
         .from('cargo_entidad')
         .where('cod_entidad', codEntidad)
 }
 
-export const cargoEntidadPorNombre = (codEntidad:number, cargo:string) =>{
+export const cargoEntidadPorNombre = (codEntidad:number, cargo:string, lote:number) =>{
     return db
         .select('cod_cargo_entidad','nombre')
         .from('cargo_entidad')
         .where('cod_entidad', codEntidad)
+        .andWhere('lote',lote)
         .andWhere(db.raw('TRIM(UPPER(nombre)) = TRIM(UPPER(?))', [cargo.trim().toUpperCase()]));
 }

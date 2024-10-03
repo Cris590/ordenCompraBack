@@ -16,7 +16,7 @@ db.on('query', (message: any) => logDatabasePYS.info(formatMessages.queryFormat(
 
 export async function getUser(cedula: string): Promise<IUser> {
   return db
-    .select("u.*","e.nombre as entidad","e.nit")
+    .select("u.*","e.nombre as entidad","e.nit","e.entrega_bonos")
     .from("usuario as u")
     .leftJoin("entidad as e","u.cod_entidad","e.cod_entidad")
     .where('u.cedula', cedula)

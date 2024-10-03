@@ -2,6 +2,11 @@
 import { Request, Response } from 'express';
 import path from 'path';
 import bcrypt from 'bcryptjs'
+const fs = require("fs");
+
+// @ts-ignore
+import Handlebars from "handlebars";
+const DEV = process.env.DEV || ''
 
 import * as generalService from './general'
 import * as entidadDao from '../databases/entidad'
@@ -10,6 +15,8 @@ import * as userService from '../services/users';
 import { processCSVFile } from '../helpers/csvUpload';
 import { IUser } from '../interfaces/user';
 import { RequestToken } from '../interfaces/express';
+import { sendMail } from '../helpers/sendMail';
+import PasswordManager from '../helpers/passwordManager';
 
 export const obtenerEntidades = async (req: Request, res: Response) => {
     try {
@@ -131,6 +138,15 @@ export const editarEntidad = async (req: Request, res: Response) => {
     try {
 
         let { codEntidad } = req.params
+
+        if(!!req.body.gestionada){
+
+            let infoEntidad = await generalService.getTableInformation('entidad','cod_entidad',codEntidad)
+            if(infoEntidad.length > 0 && infoEntidad[0].entrega_bonos === "VIRTUAL"){
+                await enviarCorreosActivacionUsuario(+codEntidad)
+            }
+
+        }
         await entidadDao.actualizarEntidad(req.body, +codEntidad)
         res.send({
             error: 0,
@@ -154,6 +170,74 @@ export const editarEntidad = async (req: Request, res: Response) => {
 
 }
 
+export const pruebasCorreo = async (req: Request, res: Response) => {
+    try {
+
+        const passwordManager = new PasswordManager();
+        let password = passwordManager.obtenerPassword('1013661443');
+
+
+        await enviarCorreoUsuario('cristian.aragon@pysltda.com','1013661443','123456','Cristian Aragón')
+        res.send('ok')
+
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al editar la identidad'
+            }
+        })
+    }
+
+}
+
+const enviarCorreosActivacionUsuario = async(codEntidad:number) =>{
+    try {
+        let usuarios = await entidadDao.getUsuariosEntidadCorreo(codEntidad)
+        let promisesCorreos:any[] = []
+
+        const passwordManager = new PasswordManager();
+
+        for (const usuario of usuarios) {
+            let password = passwordManager.obtenerPassword(usuario.cedula);
+            let correo = usuario.email
+            let usuarioCredenciales = usuario.cedula
+            // let password = '123456'
+            let nombre = usuario.email
+            promisesCorreos.push( enviarCorreoUsuario(correo,usuarioCredenciales, password, nombre) )
+        }
+
+        Promise.all(promisesCorreos)
+    } catch (e) {
+        return false
+    }
+}
+
+const enviarCorreoUsuario = async ( correo:string, usuario:string, password:string, nombre:String ) =>{
+    try {
+        var templateHtml = fs.readFileSync(
+            path.join(process.cwd(), `${DEV}/templates/correo_credenciales.html`),
+            "utf8"
+        );
+
+        var template = Handlebars.compile(templateHtml);
+        var html = template({
+            nombre,
+            usuario, 
+            password
+        });
+
+        let envio = await sendMail(correo, 'Credenciales punto de venta',html)
+        return true
+
+    } catch (e) {
+        return false
+    }
+}
+
 export const cargarUsuariosEntidad = async (req: Request, res: Response) => {
     try {
 
@@ -171,7 +255,7 @@ export const cargarUsuariosEntidad = async (req: Request, res: Response) => {
 
         console.log(rows[0])
 
-        let columnasValidas = ["NOMBRE", "CEDULA", "EMAIL","CARGO", "SEXO", "ACTIVO", "PASSWORD",]
+        let columnasValidas = ["NOMBRE", "CEDULA", "EMAIL","CARGO","LOTE","SEXO", "ACTIVO", "PASSWORD",]
         let columnasArchivo = Object.keys(rows[0]).filter((value)=>value.length > 0)
                                 .map((rowName) => rowName.toLocaleUpperCase().trim())
 
@@ -221,6 +305,7 @@ interface IUsuarioCarga {
     documento: string,
     email: string,
     cargo:string,
+    lote:number,
     sexo: string,
     activo: number,
     password: string
@@ -267,7 +352,6 @@ const limpiarUsuario = async (usuarioEntidad: IUsuarioCarga, codEntidad: number)
             ...resto
         }
 
-
         for (const key of Object.keys((usuarioEntidad))) {
             switch (key) {
                 case 'nombre':
@@ -299,7 +383,7 @@ const limpiarUsuario = async (usuarioEntidad: IUsuarioCarga, codEntidad: number)
                     if(usuarioEntidad[key].length === 0){
                         usuarioLimpio = null
                     }else{
-                        let cargoEntidad = await entidadDao.cargoEntidadPorNombre(codEntidad, usuarioEntidad[key].trim())
+                        let cargoEntidad = await entidadDao.cargoEntidadPorNombre(codEntidad, usuarioEntidad[key].trim() ,+usuarioEntidad.lote )
                         if(cargoEntidad.length === 0){
                             usuarioLimpio = null
                         }else{
@@ -321,12 +405,34 @@ const limpiarUsuario = async (usuarioEntidad: IUsuarioCarga, codEntidad: number)
         const existeUsuario = await userDao.getUser(usuarioLimpio.cedula!)
         if (existeUsuario) return null
 
+        const passwordManager = new PasswordManager();
+
+        const contrasenaExistente = passwordManager.obtenerPassword(usuarioLimpio.cedula!);
+        if (contrasenaExistente) {
+            // console.log(`La contraseña actual para el usuario '${usuarioLimpio.cedula!}' es: ${contrasenaExistente}`);
+            // console.log('Modificando la contraseña...');
+
+            // Modificar la contraseña
+            passwordManager.establecerPassword(usuarioLimpio.cedula!, usuarioLimpio.password!);
+            // console.log(`La contraseña para el usuario '${usuarioLimpio.cedula!}' ha sido actualizada.`);
+        } else {
+            // console.log(`El usuario '${usuarioLimpio.cedula!}' no existe. Creando una nueva entrada...`);
+
+            // Crear una nueva entrada
+            passwordManager.establecerPassword(usuarioLimpio.cedula!, usuarioLimpio.password!);
+            // console.log(`La contraseña para el usuario '${usuarioLimpio.cedula!}' ha sido creada.`);
+        }
+
+
+
         const salt = bcrypt.genSaltSync();
         usuarioLimpio.password = (usuarioLimpio.password) && bcrypt.hashSync(usuarioLimpio.password, salt)
-
+        delete usuarioLimpio.lote
         return usuarioLimpio
 
     } catch (e: any) {
+        console.log('*****')
+        console.log(e)
         return null
     }
 }
