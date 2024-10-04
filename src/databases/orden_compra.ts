@@ -85,7 +85,8 @@ export const crearOrdenCompra = async (data: any) => {
 
 export const validarOrden = async (codUsuario:number) => {
     return db
-    .select("o.*","u.nombre as usuario_creacion", "e.direccion","e.ciudad")
+    .select("o.*",db.raw("CONVERT_TZ(o.fecha_creacion, '+00:00', '-05:00') AS fecha_creacion_local")
+        ,"u.nombre as usuario_creacion", "e.direccion","e.ciudad")
     .from('orden as o')
     .leftJoin('usuario as u','o.cod_usuario_creacion','u.cod_usuario')
     .leftJoin('entidad as e','e.cod_entidad','u.cod_entidad')
