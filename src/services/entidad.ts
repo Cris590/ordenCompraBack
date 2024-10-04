@@ -139,13 +139,8 @@ export const editarEntidad = async (req: Request, res: Response) => {
 
         let { codEntidad } = req.params
 
-        if(!!req.body.gestionada){
-
-            let infoEntidad = await generalService.getTableInformation('entidad','cod_entidad',codEntidad)
-            if(infoEntidad.length > 0 && infoEntidad[0].entrega_bonos === "VIRTUAL"){
-                await enviarCorreosActivacionUsuario(+codEntidad)
-            }
-
+        if(!!req.body.entrega_bonos && req.body.entrega_bonos === "VIRTUAL" ){
+            await enviarCorreosActivacionUsuario(+codEntidad)
         }
         await entidadDao.actualizarEntidad(req.body, +codEntidad)
         res.send({
@@ -234,6 +229,8 @@ const enviarCorreoUsuario = async ( correo:string, usuario:string, password:stri
         return true
 
     } catch (e) {
+        console.log('***** ERROR enviarCorreoUsuario ****')
+        console.log(e)
         return false
     }
 }
