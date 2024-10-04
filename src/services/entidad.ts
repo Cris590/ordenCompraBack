@@ -200,8 +200,7 @@ const enviarCorreosActivacionUsuario = async(codEntidad:number) =>{
             let password = passwordManager.obtenerPassword(usuario.cedula);
             let correo = usuario.email
             let usuarioCredenciales = usuario.cedula
-            // let password = '123456'
-            let nombre = usuario.email
+            let nombre = usuario.nombre
             promisesCorreos.push( enviarCorreoUsuario(correo,usuarioCredenciales, password, nombre) )
         }
 
