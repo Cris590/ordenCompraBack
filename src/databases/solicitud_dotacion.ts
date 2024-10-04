@@ -16,13 +16,15 @@ db.on('query', (message: any) => logDatabasePYS.info(formatMessages.queryFormat(
 
 export const obtenerOrdenesPendientes = (codEntidad:number): Promise<IEntidadResumen[]> => {
     return db
-        .select('o.cod_orden', 'o.cod_usuario','uo.nombre as usuario','uo.cedula', 
-            'uc.nombre as usuario_creacion','uc.cedula as documento_usuario_creacion', 'o.fecha_creacion','c.nombre as cargo')
-        .from('orden as o')
-        .join('usuario as uo','uo.cod_usuario','o.cod_usuario')
-        .join('usuario as uc','uc.cod_usuario','o.cod_usuario')
+        .select('o.cod_orden', 'o.cod_usuario','uo.nombre as usuario','uo.cedula',
+            'o.fecha_creacion', db.raw("CONCAT(c.nombre, ' - LOTE ', c.lote) as cargo"))
+        .from('usuario as uo')
+        .leftJoin('orden as o','uo.cod_usuario','o.cod_usuario')
         .join('cargo_entidad as c','c.cod_cargo_entidad','uo.cod_cargo_entidad')
+        .join('entidad as e','e.cod_entidad','uo.cod_entidad')
         .where('uo.cod_entidad',codEntidad)
-        .andWhereRaw( `( o.ciudad is null or o.direccion is null)` )
-                
+        .andWhere('uo.cod_perfil',3)
+        .whereNull('o.cod_orden')
+        .andWhere('e.entrega_bonos','VIRTUAL')
+        .andWhere('e.gestionada',0)
 }

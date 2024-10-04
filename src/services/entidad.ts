@@ -490,8 +490,19 @@ export const obtenerUsuarioCoordinadorEntidad = async (req: Request, res: Respon
 
 export const crearUsuarioEntidad = async (req:Request, res:Response) =>{
     try {
-        let user = req.body
-        let usuarioNuevo = await userService.createUser(user as IUser)
+        let user = req.body as IUser
+
+       
+
+        // Enviar correo al coordinador
+        if(user.cod_perfil === 2){
+            await enviarCorreoUsuario(user.email!, user.cedula!, user.password!, user.nombre)
+        }else if(user.cod_perfil === 3){
+            const passwordManager = new PasswordManager();
+            passwordManager.establecerPassword(user.cedula!, user.password!);
+        }
+
+        let usuarioNuevo = await userService.createUser(user)
         res.send({
             error: 0,
             cod_usuario:usuarioNuevo.createdUser,
