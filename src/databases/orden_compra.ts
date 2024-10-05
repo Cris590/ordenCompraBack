@@ -52,7 +52,7 @@ export const getProductoDetalleMostrar = (codProducto:number): Promise<any[]> =>
 
 export const getCategoriaActiva = (codCategoria:number): Promise<any[]> => {
     return db
-        .select('nombre')
+        .select('nombre','sexo')
         .from('categoria as c')
         .where('cod_categoria',codCategoria)
         .andWhere('activo',1)       

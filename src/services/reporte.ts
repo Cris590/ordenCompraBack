@@ -121,6 +121,102 @@ export const reporteGeneralEntidad = async (req: Request, res: Response) => {
 
 }
 
+export const reporteComparativo = async (req: Request, res: Response) => {
+    try {
+        let request = req as RequestToken
+        const { codEntidad } = req.params
+        const { cod_entidad, cod_perfil } = request.auth.user
+        if(!(cod_perfil === 1 || (cod_perfil === 2 && +codEntidad === cod_entidad ))){
+            return res.send({
+                error:1,
+                msg:{
+                    icon:'error',
+                    text:'No tiene permisos para descargar este reporte'
+                }
+            })
+        }
+        let usuariosEntidadResult = await reporteDao.reporteComparativo(+codEntidad)
+        let usuariosEntidad: IUsuarioProductosFormateados[] = []
+
+        let infoCoordinador = await reporteDao.coordinadorEntidad(+codEntidad)
+
+        usuariosEntidadResult.forEach((result) => {
+            usuariosEntidad.push({
+                ...result,
+                nombre_supervisor:infoCoordinador[0].nombre,
+                cedula_supervisor:infoCoordinador[0].cedula,
+                productos:(result.productos) ? JSON.parse(result.productos) : null,
+            })
+        })
+
+        let arreglo: IUsuarioReporteDetalle[] = []
+        for (const usuario of usuariosEntidad) {
+
+            if (usuario.productos) {
+                for (const producto of usuario.productos) {
+                    
+                    let aux: IUsuarioReporteDetalle = {
+                        ...usuario,
+                        categoria: producto.categoria,
+                        nombre_producto: producto.nombre,
+                        cantidad: producto.cantidad,
+                       
+                    }
+                    delete aux.productos
+                    arreglo.push(aux)
+                }
+            } else {
+                let aux: IUsuarioReporteDetalle = {
+                    ...usuario,
+                    categoria: '',
+                    nombre_producto: '',
+                    cantidad: 0,
+                    
+                }
+                delete aux.productos
+                arreglo.push(aux)
+            }
+
+        }
+        const now = new Date();
+        const timestamp = now.toISOString().replace(/[-:.TZ]/g, '');
+        const filePath = path.join(process.cwd(), `uploads/reportes/${timestamp}.xlsx`)
+
+        await createExcelFile(arreglo, filePath)
+        // Envía el archivo como respuesta
+        res.download(filePath, (err) => {
+            if (err) {
+                return res.send({
+                    error: 1,
+                    msg: {
+                        icon: 'error',
+                        text: 'Error al generar el informe, comuniquese con administrador'
+                    }
+                })
+            }
+
+            // Borra el archivo después de enviarlo
+            fs.unlink(filePath, (unlinkErr) => {
+                if (unlinkErr) {
+                    console.error('Error al borrar el archivo:', unlinkErr);
+                }
+            });
+        });
+
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al consultar los productos'
+            }
+        })
+    }
+
+}
+
 export const descargarBonosUsuario = async (req: Request, res: Response) => {
     try {
 

@@ -12,6 +12,8 @@ import * as generalService from './general'
 import * as entidadDao from '../databases/entidad'
 import * as userDao from '../databases/users';
 import * as userService from '../services/users';
+import * as ordenCompraDao from '../databases/orden_compra'
+
 import { processCSVFile } from '../helpers/csvUpload';
 import { IUser } from '../interfaces/user';
 import { RequestToken } from '../interfaces/express';
@@ -43,19 +45,19 @@ export const obtenerEntidades = async (req: Request, res: Response) => {
 export const informacionContrato = async (req: Request, res: Response) => {
     try {
         let request = req as RequestToken
-        if(request.auth.user.cod_perfil != 2){
+        if (request.auth.user.cod_perfil != 2) {
             return res.send({
-                error:1,
-                msg:{
-                    icon:'error',
-                    message:'No tiene permisos para ver la información de la entidad'
+                error: 1,
+                msg: {
+                    icon: 'error',
+                    message: 'No tiene permisos para ver la información de la entidad'
                 }
             })
         }
         let info = await entidadDao.getInfoContrato(request.auth.user.cod_entidad)
         res.send({
             error: 0,
-            info:info[0]
+            info: info[0]
         })
 
     } catch (e: any) {
@@ -139,7 +141,7 @@ export const editarEntidad = async (req: Request, res: Response) => {
 
         let { codEntidad } = req.params
 
-        if(!!req.body.entrega_bonos && req.body.entrega_bonos === "VIRTUAL" ){
+        if (!!req.body.entrega_bonos && req.body.entrega_bonos === "VIRTUAL") {
             await enviarCorreosActivacionUsuario(+codEntidad)
         }
         await entidadDao.actualizarEntidad(req.body, +codEntidad)
@@ -172,7 +174,7 @@ export const pruebasCorreo = async (req: Request, res: Response) => {
         let password = passwordManager.obtenerPassword('1013661443');
 
 
-        await enviarCorreoUsuario('cristian.aragon@pysltda.com','1013661443','123456','Cristian Aragón')
+        await enviarCorreoUsuario('cristian.aragon@pysltda.com', '1013661443', '123456', 'Cristian Aragón')
         res.send('ok')
 
     } catch (e: any) {
@@ -189,10 +191,10 @@ export const pruebasCorreo = async (req: Request, res: Response) => {
 
 }
 
-const enviarCorreosActivacionUsuario = async(codEntidad:number) =>{
+const enviarCorreosActivacionUsuario = async (codEntidad: number) => {
     try {
         let usuarios = await entidadDao.getUsuariosEntidadCorreo(codEntidad)
-        let promisesCorreos:any[] = []
+        let promisesCorreos: any[] = []
 
         const passwordManager = new PasswordManager();
 
@@ -201,7 +203,7 @@ const enviarCorreosActivacionUsuario = async(codEntidad:number) =>{
             let correo = usuario.email
             let usuarioCredenciales = usuario.cedula
             let nombre = usuario.nombre
-            promisesCorreos.push( enviarCorreoUsuario(correo,usuarioCredenciales, password, nombre) )
+            promisesCorreos.push(enviarCorreoUsuario(correo, usuarioCredenciales, password, nombre))
         }
 
         Promise.all(promisesCorreos)
@@ -210,7 +212,7 @@ const enviarCorreosActivacionUsuario = async(codEntidad:number) =>{
     }
 }
 
-const enviarCorreoUsuario = async ( correo:string, usuario:string, password:string, nombre:String ) =>{
+const enviarCorreoUsuario = async (correo: string, usuario: string, password: string, nombre: String) => {
     try {
         var templateHtml = fs.readFileSync(
             path.join(process.cwd(), `${DEV}/templates/correo_credenciales.html`),
@@ -220,11 +222,11 @@ const enviarCorreoUsuario = async ( correo:string, usuario:string, password:stri
         var template = Handlebars.compile(templateHtml);
         var html = template({
             nombre,
-            usuario, 
+            usuario,
             password
         });
 
-        let envio = await sendMail(correo, 'Credenciales punto de venta',html)
+        let envio = await sendMail(correo, 'Credenciales punto de venta', html)
         return true
 
     } catch (e) {
@@ -251,9 +253,9 @@ export const cargarUsuariosEntidad = async (req: Request, res: Response) => {
 
         console.log(rows[0])
 
-        let columnasValidas = ["NOMBRE", "CEDULA", "EMAIL","CARGO","LOTE","SEXO", "ACTIVO", "PASSWORD",]
-        let columnasArchivo = Object.keys(rows[0]).filter((value)=>value.length > 0)
-                                .map((rowName) => rowName.toLocaleUpperCase().trim())
+        let columnasValidas = ["NOMBRE", "CEDULA", "EMAIL", "CARGO", "LOTE", "SEXO", "ACTIVO", "PASSWORD",]
+        let columnasArchivo = Object.keys(rows[0]).filter((value) => value.length > 0)
+            .map((rowName) => rowName.toLocaleUpperCase().trim())
 
         const isSameColumns = columnasValidas.length === columnasArchivo.length &&
             columnasValidas.every((col, index) => col === columnasArchivo[index]);
@@ -273,15 +275,15 @@ export const cargarUsuariosEntidad = async (req: Request, res: Response) => {
             total
         } = await validarUsuarios(rows, +req.body.cod_entidad)
 
-        if(usuariosCreacion.length > 0){
+        if (usuariosCreacion.length > 0) {
             await userDao.createUser(usuariosCreacion)
         }
 
         res.send({
             error: 0,
-            msg:{
-                icon:'success',
-                text:`Total de clientes cargados ( ${total} )`
+            msg: {
+                icon: 'success',
+                text: `Total de clientes cargados ( ${total} )`
             }
         })
 
@@ -300,34 +302,34 @@ interface IUsuarioCarga {
     nombre: string,
     documento: string,
     email: string,
-    cargo:string,
-    lote:number,
+    cargo: string,
+    lote: number,
     sexo: string,
     activo: number,
     password: string
 }
 
-const validarUsuarios = async (usuarios: IUsuarioCarga[], codEntidad:number) => {
+const validarUsuarios = async (usuarios: IUsuarioCarga[], codEntidad: number) => {
     try {
-    
-        let usuariosCreacion:IUser[] = []
+
+        let usuariosCreacion: IUser[] = []
         let usuariosCreados = 0
         for (const usuario of usuarios) {
             let usuarioLimpio = await limpiarUsuario(usuario, codEntidad)
-            if(usuarioLimpio){
+            if (usuarioLimpio) {
                 usuariosCreacion.push(usuarioLimpio)
                 usuariosCreados += 1
             }
-        }   
+        }
 
         return {
             usuariosCreacion,
-            total:usuariosCreados
+            total: usuariosCreados
         }
     } catch (e) {
         return {
-            usuariosCreacion:[],
-            total:0
+            usuariosCreacion: [],
+            total: 0
         }
     }
 }
@@ -344,7 +346,7 @@ const limpiarUsuario = async (usuarioEntidad: IUsuarioCarga, codEntidad: number)
         let usuarioLimpio: IUser | null = {
             cod_perfil: 3,
             cod_entidad: codEntidad,
-            cod_cargo_entidad:0,
+            cod_cargo_entidad: 0,
             ...resto
         }
 
@@ -376,13 +378,13 @@ const limpiarUsuario = async (usuarioEntidad: IUsuarioCarga, codEntidad: number)
 
                     break;
                 case 'cargo':
-                    if(usuarioEntidad[key].length === 0){
+                    if (usuarioEntidad[key].length === 0) {
                         usuarioLimpio = null
-                    }else{
-                        let cargoEntidad = await entidadDao.cargoEntidadPorNombre(codEntidad, usuarioEntidad[key].trim() ,+usuarioEntidad.lote )
-                        if(cargoEntidad.length === 0){
+                    } else {
+                        let cargoEntidad = await entidadDao.cargoEntidadPorNombre(codEntidad, usuarioEntidad[key].trim(), +usuarioEntidad.lote)
+                        if (cargoEntidad.length === 0) {
                             usuarioLimpio = null
-                        }else{
+                        } else {
                             if (usuarioLimpio) {
                                 usuarioLimpio.cod_cargo_entidad = cargoEntidad[0].cod_cargo_entidad
                             }
@@ -438,7 +440,7 @@ export const obtenerUsuariosEntidad = async (req: Request, res: Response) => {
         let { codEntidad } = req.params
 
         let usuarios = await entidadDao.getUsuariosIdentidad(codEntidad)
-        let infoEntidad = await generalService.getTableInformation('entidad','cod_entidad',codEntidad)
+        let infoEntidad = await generalService.getTableInformation('entidad', 'cod_entidad', codEntidad)
         res.send({
             error: 0,
             usuarios,
@@ -466,7 +468,7 @@ export const obtenerUsuarioCoordinadorEntidad = async (req: Request, res: Respon
         let usuarioCoor = await entidadDao.getUsuarioCoordinador(codEntidad)
         res.send({
             error: 0,
-            usuario:usuarioCoor.length > 0 ? usuarioCoor[0] : null
+            usuario: usuarioCoor.length > 0 ? usuarioCoor[0] : null
         })
 
     } catch (e: any) {
@@ -484,16 +486,16 @@ export const obtenerUsuarioCoordinadorEntidad = async (req: Request, res: Respon
 }
 
 
-export const crearUsuarioEntidad = async (req:Request, res:Response) =>{
+export const crearUsuarioEntidad = async (req: Request, res: Response) => {
     try {
         let user = req.body as IUser
 
-       
+
 
         // Enviar correo al coordinador
-        if(user.cod_perfil === 2){
+        if (user.cod_perfil === 2) {
             await enviarCorreoUsuario(user.email!, user.cedula!, user.password!, user.nombre)
-        }else if(user.cod_perfil === 3){
+        } else if (user.cod_perfil === 3) {
             const passwordManager = new PasswordManager();
             passwordManager.establecerPassword(user.cedula!, user.password!);
         }
@@ -501,14 +503,14 @@ export const crearUsuarioEntidad = async (req:Request, res:Response) =>{
         let usuarioNuevo = await userService.createUser(user)
         res.send({
             error: 0,
-            cod_usuario:usuarioNuevo.createdUser,
+            cod_usuario: usuarioNuevo.createdUser,
             msg: {
                 icon: 'success',
                 text: 'Usuario creado correctamente'
             }
         })
 
-    } catch (e:any) {
+    } catch (e: any) {
         console.log('***********')
         console.log(e)
         res.send({
@@ -521,19 +523,19 @@ export const crearUsuarioEntidad = async (req:Request, res:Response) =>{
     }
 }
 
-export const editarUsuarioEntidad= async (req: Request, res: Response) => {
+export const editarUsuarioEntidad = async (req: Request, res: Response) => {
     try {
 
         const { codUsuario } = req.params
-        let usuario:IUser = req.body
-        
+        let usuario: IUser = req.body
+
         await userService.editUser(usuario, +codUsuario)
         res.send({
-            error:0,
-            msg:{
-                icon:'success',
-                text:'Usuario modificado correctamente'
-            } 
+            error: 0,
+            msg: {
+                icon: 'success',
+                text: 'Usuario modificado correctamente'
+            }
         })
 
     } catch (e: any) {
@@ -541,10 +543,10 @@ export const editarUsuarioEntidad= async (req: Request, res: Response) => {
         console.log(e)
         res.send({
             error: 1,
-            msg:{
-                icon:'error',
-                text:'Error al editar el usuario'
-            } 
+            msg: {
+                icon: 'error',
+                text: 'Error al editar el usuario'
+            }
         })
     }
 
@@ -578,13 +580,13 @@ export const cargosPorEntidadResumen = async (req: Request, res: Response) => {
 export const detalleCargoEntidad = async (req: Request, res: Response) => {
     try {
         let { codCargoEntidad } = req.params
-        let cargo = await generalService.getTableInformation('cargo_entidad','cod_cargo_entidad',codCargoEntidad)
-        if(cargo.length > 0){
+        let cargo = await generalService.getTableInformation('cargo_entidad', 'cod_cargo_entidad', codCargoEntidad)
+        if (cargo.length > 0) {
             cargo[0].cod_categorias = JSON.parse(cargo[0].cod_categorias)
         }
         res.send({
             error: 0,
-            cargo:cargo[0]
+            cargo: cargo[0]
         })
 
     } catch (e: any) {
@@ -668,4 +670,132 @@ export const editarCargoEntidad = async (req: Request, res: Response) => {
         })
     }
 
+}
+
+
+
+export const resumenProductosEntidad = async (req: Request, res: Response) => {
+    try {
+        let { codEntidad } = req.params
+        let cargos = await entidadDao.categoriasPorCargo(+codEntidad)
+        if (cargos.length === 0) {
+            return res.send({
+                error: 1,
+                msg: {
+                    icon: 'error',
+                    text: 'No hay categorias parametrizada para entidad, por lo tanto no hay productos para mostrar'
+                }
+            })
+        }
+
+        let response: any[] = []
+        for (const cargo of cargos) {
+            let categoriasValidacion = await validarCategoriasActivas(cargo.cod_categorias)
+            let categoriasResumen=[]
+            for (const categoria of categoriasValidacion) {
+
+                let sexoResumen = []
+                for (const sexo of categoria.sexo) {
+
+                    let productos = await entidadDao.getProductosEntidad([categoria.cod_categoria])
+                    let productosResumen = []
+                    for (const producto of productos) {
+                        let coloresProducto: { cod_producto_color: number, color: string, color_descripcion: string, imagenes?: string[] }[] = []
+                        if (producto.tiene_color) {
+                            let coloresAux = await ordenCompraDao.getColoresProducto(producto.cod_producto)
+
+                            for (const colorProducto of coloresAux) {
+                                let imagenes = await ordenCompraDao.getImagenesPorColor(colorProducto.cod_producto_color)
+
+                                coloresProducto.push({
+                                    ...colorProducto,
+                                    imagenes: (imagenes.length > 0) ? imagenes.map(({ url }) => url) : []
+                                })
+                            }
+
+                        }
+
+                        productosResumen.push({
+                            ...producto,
+                            colores: producto.tiene_color ? coloresProducto : undefined,
+                            talla: producto.tiene_talla ? JSON.parse(producto.talla || '') : undefined,
+                        })
+                    }
+
+                    sexoResumen.push({
+                        nombre: (sexo === "M") ? 'Masculino' : 'Femenino',
+                        productos: productosResumen
+                    })
+                }
+                categoriasResumen.push({
+                    nombre:categoria.nombre,
+                    cantidad:categoria.cantidad,
+                    sexos:sexoResumen
+                })
+
+            }
+
+            response.push({
+                cargo: cargo.nombre,
+                categorias:categoriasResumen
+            })
+        }
+        res.send({
+            error: 0,
+            response
+        })
+
+
+        let response2 = [{
+            cargo: 'SECRETARIA',
+            categorias: [{
+                nombre: 'BLUSAS',
+                sexos: [{
+                    nombre: 'FEMENINO',
+                    productos: [{
+                        nombre: 'Blusa Primatela',
+                        tallas: ['x', 'y', 'z'],
+                        colores: ['x', 'y', 'z'],
+                        cantidad: 1
+                    }]
+
+                }]
+            }]
+
+        }]
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al consultar las entidades'
+            }
+        })
+    }
+
+}
+
+const validarCategoriasActivas = async (categoriasString: string) => {
+    try {
+       
+        let categorias = JSON.parse(categoriasString) as { cod_categoria: number, cantidad: string }[]
+        let categoriasActivas: { cod_categoria: number, cantidad: number, nombre: string, sexo: string[] }[] = []
+        for (const categoria of categorias) {
+            let categoriaActiva = await ordenCompraDao.getCategoriaActiva(categoria.cod_categoria)
+            if (categoriaActiva.length > 0) {
+                categoriasActivas.push({
+                    cod_categoria: categoria.cod_categoria,
+                    cantidad: +categoria.cantidad,
+                    nombre: categoriaActiva[0].nombre,
+                    sexo: JSON.parse(categoriaActiva[0].sexo)
+                })
+            }
+        }
+
+        return categoriasActivas
+    } catch (e) {
+        return []
+    }
 }

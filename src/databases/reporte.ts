@@ -20,6 +20,7 @@ export const reporteEntidad = async (codEntidad: number): Promise<IUsuarioOrdenP
         'u.nombre',
         'u.email',
         'ce.nombre as cargo_entidad',
+        'ce.lote',
         'e.nombre as entidad', 
         'e.no_contrato',
         'e.nit',
@@ -51,6 +52,37 @@ export const reporteEntidad = async (codEntidad: number): Promise<IUsuarioOrdenP
       .leftJoin('usuario as u2', 'o.cod_usuario_creacion', 'u2.cod_usuario')
       .where('u.cod_entidad', codEntidad)
       .andWhere('u.cod_perfil', 3);
+}
+
+export const reporteComparativo = async (codEntidad: number): Promise<IUsuarioOrdenPorEntidadSql[]> => {
+  return db.select(
+      'u.cedula as cedula_beneficiario',
+      'u.nombre as nombre_beneficiario',
+      'ce.nombre as cargo_entidad',
+      'ce.lote',
+      'e.nombre as entidad', 
+      'e.no_contrato',
+      'e.nit',
+      'o.productos'
+    )
+    .from('usuario as u')
+    .join('cargo_entidad as ce', 'u.cod_cargo_entidad', 'ce.cod_cargo_entidad')
+    .join('entidad as e', 'e.cod_entidad','u.cod_entidad')
+    .leftJoin('orden as o', 'o.cod_usuario', 'u.cod_usuario')
+    .leftJoin('usuario as u2', 'o.cod_usuario_creacion', 'u2.cod_usuario')
+    .where('u.cod_entidad', codEntidad)
+    .andWhere('u.cod_perfil', 3);
+}
+
+export const coordinadorEntidad = async (codEntidad: number): Promise<IUsuarioOrdenPorEntidadSql[]> => {
+  return db.select(
+      'u.cedula',
+      'u.nombre'
+    )
+    .from('usuario as u')
+    .join('entidad as e', 'e.cod_entidad','u.cod_entidad')
+    .where('u.cod_entidad', codEntidad)
+    .andWhere('u.cod_perfil', 2);
 }
 
 export const infoBonosEntidad = async (codEntidad: number): Promise<IUsuarioBonos[]> => {

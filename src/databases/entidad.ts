@@ -107,3 +107,22 @@ export const cargoEntidadPorNombre = (codEntidad:number, cargo:string, lote:numb
         .andWhere('lote',lote)
         .andWhere(db.raw('TRIM(UPPER(nombre)) = TRIM(UPPER(?))', [cargo.trim().toUpperCase()]));
 }
+
+
+
+export const categoriasPorCargo = (codEntidad:number ):Promise< { cod_categorias:string, nombre:string}[]> =>{
+    return db
+        .select('c.cod_categorias', db.raw("CONCAT(c.nombre, ' - LOTE ', c.lote) as nombre"))
+        .from('cargo_entidad as c')
+        .where('c.cod_entidad',codEntidad) 
+}
+
+export const getProductosEntidad = (categorias:number[] ): Promise<any[]> => {
+    return db
+        .select('p.cod_producto', 'p.cod_categoria','p.nombre','p.tiene_talla','p.tiene_color','p.talla','c.nombre as categoria', 'c.cod_categoria')
+        .from('producto as p')
+        .join('categoria as c', 'c.cod_categoria','p.cod_categoria')
+        .whereIn('p.cod_categoria',categorias)
+        .andWhere('p.activo',1)
+        .andWhere('c.activo',1)
+}

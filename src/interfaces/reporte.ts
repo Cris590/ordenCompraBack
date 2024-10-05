@@ -13,6 +13,9 @@ export interface IUsuarioOrdenPorEntidadSql {
     cedula_creador?: string;
     nombre_creador?: string;
     no_contrato?: string;
+    nombre_supervisor?: string;
+    cedula_supervisor?: string;
+
 }
 
 export interface IUsuarioProductosFormateados extends Omit<IUsuarioOrdenPorEntidadSql, 'productos'> {
