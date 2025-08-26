@@ -16,9 +16,13 @@ router.get('/usuarios/:codEntidad', entidadService.obtenerUsuariosEntidad);
 router.get('/usuario_coordinador/:codEntidad', entidadService.obtenerUsuarioCoordinadorEntidad);
 router.get('/cargos/:codEntidad', entidadService.cargosPorEntidadResumen);
 router.get('/detalle_cargo/:codCargoEntidad', entidadService.detalleCargoEntidad);
+router.get('/detalle_cargo_bono_producto/:codCargoBonoProducto', entidadService.detalleCargoBonoProducto);
 
 router.post('/crear_cargo',entidadService.crearCargoEntidad)
+router.post('/crear_cargo_bono_producto',entidadService.crearCargoBonosProducto)
+
 router.put('/editar_cargo/:codCargoEntidad', entidadService.editarCargoEntidad);
+router.put('/editar_cargo_bono/:codCargoBonoProducto', entidadService.editarCargoBonoEntidad);
 
 router.post('/cargar_usuarios',entidadService.cargarUsuariosEntidad)
 router.post('/crear_usuario_entidad',entidadService.crearUsuarioEntidad)

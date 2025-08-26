@@ -7,6 +7,7 @@ export interface IEntidadResumen {
 export interface IEntidadInfoBasica extends IEntidadResumen{
     nit:string,
     info_contrato:string,
+    tipo_entrega_bono:string
 }
 
 export interface IUsuarioEntidad{
@@ -18,5 +19,6 @@ export interface IUsuarioEntidad{
     cedula:string,
     cod_cargo_entidad:number,
     cod_orden:number,
-    cargo_entidad:string
+    cargo_entidad:string,
+    redimido?:boolean
 }

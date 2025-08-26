@@ -20,6 +20,7 @@ export async function getUser(cedula: string): Promise<IUser> {
     .from("usuario as u")
     .leftJoin("entidad as e","u.cod_entidad","e.cod_entidad")
     .where('u.cedula', cedula)
+    .andWhere('u.cod_perfil','<>',5)
     .first()
 }
 

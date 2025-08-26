@@ -13,6 +13,7 @@ import * as entidadDao from '../databases/entidad'
 import * as userDao from '../databases/users';
 import * as userService from '../services/users';
 import * as ordenCompraDao from '../databases/orden_compra'
+import * as entidadBonosDao from '../databases/entidad_bono'
 
 import { processCSVFile } from '../helpers/csvUpload';
 import { IUser } from '../interfaces/user';
@@ -251,8 +252,6 @@ export const cargarUsuariosEntidad = async (req: Request, res: Response) => {
 
         // Validar que las columnas si correspondan
 
-        console.log(rows[0])
-
         let columnasValidas = ["NOMBRE", "CEDULA", "EMAIL", "CARGO", "LOTE", "SEXO", "ACTIVO", "PASSWORD",]
         let columnasArchivo = Object.keys(rows[0]).filter((value) => value.length > 0)
             .map((rowName) => rowName.toLocaleUpperCase().trim())
@@ -275,10 +274,17 @@ export const cargarUsuariosEntidad = async (req: Request, res: Response) => {
             total
         } = await validarUsuarios(rows, +req.body.cod_entidad)
 
+        let usuariosCreados:number[] = []
+        
         if (usuariosCreacion.length > 0) {
-            await userDao.createUser(usuariosCreacion)
+            usuariosCreados =await userDao.createUser(usuariosCreacion)
         }
 
+        //Crear los registros de los bonos por usuario
+        for (const usuario of usuariosCreacion) {
+            await crearUsuarioBono(usuario.cedula!,+req.body.cod_entidad)
+        }
+        
         res.send({
             error: 0,
             msg: {
@@ -298,6 +304,32 @@ export const cargarUsuariosEntidad = async (req: Request, res: Response) => {
     }
 }
 
+const crearUsuarioBono = async (cedula: string, codEntidad:number) => {
+    try {
+        let bonosUsuario:any = []
+        let bonosProducto = await entidadDao.getCargoBonoPorUsuario(cedula, codEntidad);
+
+        bonosProducto.forEach(({ cod_cargo_bonos_producto, cod_usuario }) => {
+            bonosUsuario.push(
+                {
+                    cod_usuario,
+                    cod_entidad:codEntidad,
+                    data_entrega: JSON.stringify({
+                        cod_cargo_bonos_producto,
+                        redimido: 0,
+                        fecha_redimido: ''
+                    })
+                })
+        });
+
+        await entidadDao.crearUsuarioBonoEntrega(bonosUsuario)
+
+
+    } catch (e) {
+
+    }
+}
+
 interface IUsuarioCarga {
     nombre: string,
     documento: string,
@@ -314,8 +346,14 @@ const validarUsuarios = async (usuarios: IUsuarioCarga[], codEntidad: number) =>
 
         let usuariosCreacion: IUser[] = []
         let usuariosCreados = 0
+        let mensajeError = ''
+
+        let infoEntidad = await generalService.getTableInformation('entidad', 'cod_entidad', codEntidad)
+
+        const tipoEntregaContrato = infoEntidad[0].tipo_entrega_contrato;
+
         for (const usuario of usuarios) {
-            let usuarioLimpio = await limpiarUsuario(usuario, codEntidad)
+            let usuarioLimpio = await limpiarUsuario(usuario, codEntidad, tipoEntregaContrato)
             if (usuarioLimpio) {
                 usuariosCreacion.push(usuarioLimpio)
                 usuariosCreados += 1
@@ -335,16 +373,27 @@ const validarUsuarios = async (usuarios: IUsuarioCarga[], codEntidad: number) =>
 }
 
 
-const limpiarUsuario = async (usuarioEntidad: IUsuarioCarga, codEntidad: number) => {
+const limpiarUsuario = async (usuarioEntidad: IUsuarioCarga, codEntidad: number, tipoEntregaContrato: number) => {
     try {
+        let cod_perfil = 0
+        switch (tipoEntregaContrato) {
+            case 1:
+                cod_perfil = 3
+                break;
+            case 2:
+                cod_perfil = 5
+                break;
 
+            default:
+                break;
+        }
         let {
             cargo,
             ...resto
         } = usuarioEntidad
 
         let usuarioLimpio: IUser | null = {
-            cod_perfil: 3,
+            cod_perfil,
             cod_entidad: codEntidad,
             cod_cargo_entidad: 0,
             ...resto
@@ -404,24 +453,9 @@ const limpiarUsuario = async (usuarioEntidad: IUsuarioCarga, codEntidad: number)
         if (existeUsuario) return null
 
         const passwordManager = new PasswordManager();
+        passwordManager.establecerPassword(usuarioLimpio.cedula!, usuarioLimpio.password!);
 
-        const contrasenaExistente = passwordManager.obtenerPassword(usuarioLimpio.cedula!);
-        if (contrasenaExistente) {
-            // console.log(`La contraseña actual para el usuario '${usuarioLimpio.cedula!}' es: ${contrasenaExistente}`);
-            // console.log('Modificando la contraseña...');
-
-            // Modificar la contraseña
-            passwordManager.establecerPassword(usuarioLimpio.cedula!, usuarioLimpio.password!);
-            // console.log(`La contraseña para el usuario '${usuarioLimpio.cedula!}' ha sido actualizada.`);
-        } else {
-            // console.log(`El usuario '${usuarioLimpio.cedula!}' no existe. Creando una nueva entrada...`);
-
-            // Crear una nueva entrada
-            passwordManager.establecerPassword(usuarioLimpio.cedula!, usuarioLimpio.password!);
-            // console.log(`La contraseña para el usuario '${usuarioLimpio.cedula!}' ha sido creada.`);
-        }
-
-
+        // 
 
         const salt = bcrypt.genSaltSync();
         usuarioLimpio.password = (usuarioLimpio.password) && bcrypt.hashSync(usuarioLimpio.password, salt)
@@ -438,9 +472,23 @@ const limpiarUsuario = async (usuarioEntidad: IUsuarioCarga, codEntidad: number)
 export const obtenerUsuariosEntidad = async (req: Request, res: Response) => {
     try {
         let { codEntidad } = req.params
-
-        let usuarios = await entidadDao.getUsuariosIdentidad(codEntidad)
+        
         let infoEntidad = await generalService.getTableInformation('entidad', 'cod_entidad', codEntidad)
+
+        let usuariosEntidad = await entidadDao.getUsuariosIdentidad(codEntidad , infoEntidad[0].tipo_entrega_contrato)
+        let usuarios:any = []
+        
+        if(infoEntidad[0].tipo_entrega_contrato == 2){
+            for (const usuario of usuariosEntidad) {
+                
+                let bonosEntregados = await entidadBonosDao.getUsuarioBonoEntrega(usuario.cod_usuario)
+                let redimido = bonosEntregados.filter((bono)=>JSON.parse(bono.data_entrega).redimido == 0).length == 0
+                usuario.redimido = redimido
+                usuarios.push(usuario)
+            }
+        }else{
+            usuarios = usuariosEntidad
+        }
         res.send({
             error: 0,
             usuarios,
@@ -489,18 +537,17 @@ export const obtenerUsuarioCoordinadorEntidad = async (req: Request, res: Respon
 export const crearUsuarioEntidad = async (req: Request, res: Response) => {
     try {
         let user = req.body as IUser
-
-
+        let usuarioNuevo = await userService.createUser(user)
+        await crearUsuarioBono(user.cedula!, user.cod_entidad!)
 
         // Enviar correo al coordinador
-        if (user.cod_perfil === 2) {
+        if (user.cod_perfil === 2 || user.cod_perfil === 6) {
             await enviarCorreoUsuario(user.email!, user.cedula!, user.password!, user.nombre)
         } else if (user.cod_perfil === 3) {
             const passwordManager = new PasswordManager();
             passwordManager.establecerPassword(user.cedula!, user.password!);
         }
 
-        let usuarioNuevo = await userService.createUser(user)
         res.send({
             error: 0,
             cod_usuario: usuarioNuevo.createdUser,
@@ -583,6 +630,7 @@ export const detalleCargoEntidad = async (req: Request, res: Response) => {
         let cargo = await generalService.getTableInformation('cargo_entidad', 'cod_cargo_entidad', codCargoEntidad)
         if (cargo.length > 0) {
             cargo[0].cod_categorias = JSON.parse(cargo[0].cod_categorias)
+            cargo[0].cod_cargo_bonos_producto = await generalService.getTableInformation('cargo_bonos_producto', 'cod_cargo_entidad', codCargoEntidad)
         }
         res.send({
             error: 0,
@@ -603,6 +651,67 @@ export const detalleCargoEntidad = async (req: Request, res: Response) => {
 
 }
 
+
+export const detalleCargoBonoProducto = async (req: Request, res: Response) => {
+    try {
+        let { codCargoBonoProducto } = req.params
+        let cargoBono = await generalService.getTableInformation('cargo_bonos_producto', 'cod_cargo_bonos_producto', codCargoBonoProducto)
+        res.send({
+            error: 0,
+            cargo_bono: cargoBono[0]
+        })
+
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al cargar el detalle del cargo'
+            }
+        })
+    }
+
+}
+
+
+
+export const crearCargoBonosProducto = async (req: Request, res: Response) => {
+    try {
+        if (!req.body.nombre || !req.body.cod_cargo_entidad || !req.body.descripcion || !req.body.valor) {
+            return res.send({
+                error: 1,
+                msg: {
+                    icon: 'error',
+                    text: 'Los parametros son obligatorios'
+                }
+            })
+        }
+
+        let cargoBonoProducto = await entidadDao.crearCargoBonosProducto(req.body)
+        res.send({
+            error: 0,
+            msg: {
+                icon: 'success',
+                text: 'Lote de productos creado correctamente'
+            },
+            cod_cargo_bonos_producto: cargoBonoProducto[0]
+        })
+
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al consultar las entidades'
+            }
+        })
+    }
+
+}
 
 export const crearCargoEntidad = async (req: Request, res: Response) => {
     try {
@@ -672,7 +781,32 @@ export const editarCargoEntidad = async (req: Request, res: Response) => {
 
 }
 
+export const editarCargoBonoEntidad = async (req: Request, res: Response) => {
+    try {
 
+        let { codCargoBonoProducto } = req.params
+        await entidadDao.actualizarCargoBonoEntidad(req.body, +codCargoBonoProducto)
+        res.send({
+            error: 0,
+            msg: {
+                icon: 'success',
+                text: 'Cargo editado correctamente'
+            }
+        })
+
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al editar la identidad'
+            }
+        })
+    }
+
+}
 
 export const resumenProductosEntidad = async (req: Request, res: Response) => {
     try {
@@ -691,7 +825,7 @@ export const resumenProductosEntidad = async (req: Request, res: Response) => {
         let response: any[] = []
         for (const cargo of cargos) {
             let categoriasValidacion = await validarCategoriasActivas(cargo.cod_categorias)
-            let categoriasResumen=[]
+            let categoriasResumen = []
             for (const categoria of categoriasValidacion) {
 
                 let sexoResumen = []
@@ -728,16 +862,16 @@ export const resumenProductosEntidad = async (req: Request, res: Response) => {
                     })
                 }
                 categoriasResumen.push({
-                    nombre:categoria.nombre,
-                    cantidad:categoria.cantidad,
-                    sexos:sexoResumen
+                    nombre: categoria.nombre,
+                    cantidad: categoria.cantidad,
+                    sexos: sexoResumen
                 })
 
             }
 
             response.push({
                 cargo: cargo.nombre,
-                categorias:categoriasResumen
+                categorias: categoriasResumen
             })
         }
         res.send({
@@ -779,7 +913,7 @@ export const resumenProductosEntidad = async (req: Request, res: Response) => {
 
 const validarCategoriasActivas = async (categoriasString: string) => {
     try {
-       
+
         let categorias = JSON.parse(categoriasString) as { cod_categoria: number, cantidad: string }[]
         let categoriasActivas: { cod_categoria: number, cantidad: number, nombre: string, sexo: string[] }[] = []
         for (const categoria of categorias) {
