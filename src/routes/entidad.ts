@@ -6,7 +6,6 @@ dotenv.config();
 
 export const router = express.Router();
 
-
 router.get('/info_contrato', entidadService.informacionContrato);
 router.get('/obtener', entidadService.obtenerEntidades);
 router.post('/crear',entidadService.crearEntidad)
