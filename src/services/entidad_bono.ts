@@ -68,7 +68,10 @@ export const consultarBonoUsuario = async (req: Request, res: Response) => {
                 valor: infoCargoBonosProducto[0].valor,
                 redimido: dataEntrega.redimido,
                 fecha_redimido: dataEntrega.fecha_redimido,
-                comentario_cierre: dataEntrega.comentario_cierre
+                comentario_cierre: dataEntrega.comentario_cierre,
+                cedula_vendedor: dataEntrega.cedula_vendedor,
+                nombre_vendedor: dataEntrega.nombre_vendedor,
+                tienda: dataEntrega.tienda
             })
 
         }
@@ -99,7 +102,10 @@ export const redimirBonoEntrega = async (req: Request, res: Response) => {
 
         const {
             comentario_cierre,
-            cod_usuario_bono_entrega
+            cod_usuario_bono_entrega,
+            cedula_vendedor,
+            nombre_vendedor,
+            tienda
         } = req.body
 
         const dataUsuarioBonoEntrega = await generalService.getTableInformation('usuario_bono_entrega', 'cod_usuario_bono_entrega',cod_usuario_bono_entrega)
@@ -111,7 +117,10 @@ export const redimirBonoEntrega = async (req: Request, res: Response) => {
             ...dataEntrega,
             redimido:1,
             fecha_redimido,
-            comentario_cierre
+            comentario_cierre,
+            cedula_vendedor,
+            nombre_vendedor,
+            tienda
         }
 
         const actualizar = await entidadBonosDao.redimirBonoEntrega(JSON.stringify(newDataEntrega), cod_usuario_bono_entrega)

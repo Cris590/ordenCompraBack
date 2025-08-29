@@ -252,7 +252,7 @@ export const cargarUsuariosEntidad = async (req: Request, res: Response) => {
 
         // Validar que las columnas si correspondan
 
-        let columnasValidas = ["NOMBRE", "CEDULA", "EMAIL", "CARGO", "LOTE", "SEXO", "ACTIVO", "PASSWORD",]
+        let columnasValidas = ["NOMBRE", "CEDULA", "EMAIL", "CARGO", "LOTE", "SEXO", "ACTIVO", "PASSWORD","CODIGO"]
         let columnasArchivo = Object.keys(rows[0]).filter((value) => value.length > 0)
             .map((rowName) => rowName.toLocaleUpperCase().trim())
 
@@ -338,7 +338,8 @@ interface IUsuarioCarga {
     lote: number,
     sexo: string,
     activo: number,
-    password: string
+    password: string,
+    codigo:string
 }
 
 const validarUsuarios = async (usuarios: IUsuarioCarga[], codEntidad: number) => {
@@ -404,6 +405,7 @@ const limpiarUsuario = async (usuarioEntidad: IUsuarioCarga, codEntidad: number,
                 case 'nombre':
                 case 'documento':
                 case 'password':
+                case 'codigo':
                 case 'email':
                     if (usuarioEntidad[key].length === 0) {
                         usuarioLimpio = null

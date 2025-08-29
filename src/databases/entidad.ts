@@ -89,7 +89,7 @@ export const getUsuariosIdentidad= (codEntidad: string | number, tipoEntrega: st
         }
 
     return db
-        .select('u.cod_usuario','u.email','u.nombre','u.activo','u.sexo','u.cedula','u.cod_cargo_entidad',
+        .select('u.cod_usuario','u.codigo','u.email','u.nombre','u.activo','u.sexo','u.cedula','u.cod_cargo_entidad',
              'o.cod_orden', db.raw("CONCAT(c.nombre, ' - LOTE ', c.lote) as cargo_entidad"))
         .from('usuario as u')
         .join('cargo_entidad as c','c.cod_cargo_entidad','u.cod_cargo_entidad')

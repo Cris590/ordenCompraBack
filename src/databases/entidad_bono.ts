@@ -49,7 +49,7 @@ export const getBonos = async (filters: any)  => {
             if (value) {
                 switch (key) {
                     case 'codigo':
-                        query.whereRaw('u.cod_usuario = ?', [value]);
+                        query.whereRaw('u.codigo = ?', [value]);
                         break;
                     case 'cedula':
                         query.whereRaw('u.cedula = ?', [value]);

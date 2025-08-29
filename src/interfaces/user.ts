@@ -11,7 +11,8 @@ export interface IUser {
   sexo:string;
   cod_cargo_entidad:number,
   entrega_bonos?:string
-  lote?:number
+  lote?:number,
+  codigo?:string
 }
 
 export interface IUserRole {

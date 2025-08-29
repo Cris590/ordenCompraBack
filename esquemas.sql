@@ -157,3 +157,22 @@ INSERT INTO u382376899_ordenes_brt.usuario (email,nombre,password,activo,cod_per
 
 INSERT INTO u382376899_ordenes_brt.variable (nombre,valor) VALUES
 	 ('JWT_EXPIRACION_EXTERNO','100d');
+
+
+ CREATE TABLE u382376899_ordenes_brt.cargo_bonos_producto (
+    `cod_cargo_bonos_producto` int(11) NOT NULL AUTO_INCREMENT,
+    `cod_cargo_entidad` int(11) DEFAULT NULL,
+    `nombre` varchar(100) DEFAULT NULL,
+    `descripcion` longtext NULL,
+    `valor` varchar(100) DEFAULT NULL,
+    PRIMARY KEY (`cod_cargo_bonos_producto`)
+  ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci;
+
+
+   CREATE TABLE u382376899_ordenes_brt.usuario_bono_entrega (
+    `cod_usuario_bono_entrega` int(11) NOT NULL AUTO_INCREMENT,
+    `cod_usuario` int(11) NOT NULL,
+    `data_entrega` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`data_entrega`)),
+    `cod_entidad` int(11) NOT NULL,
+    PRIMARY KEY (`cod_usuario_bono_entrega`)
+  ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci;
