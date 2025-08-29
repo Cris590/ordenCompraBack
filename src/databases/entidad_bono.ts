@@ -32,6 +32,7 @@ export const getBonos = async (filters: any)  => {
         .select(
            'u.cod_usuario',
            'u.nombre',
+           'u.codigo',
            'u.cedula',
            'u.sexo',
            'e.nombre as entidad',
