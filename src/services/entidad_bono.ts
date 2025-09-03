@@ -105,7 +105,8 @@ export const redimirBonoEntrega = async (req: Request, res: Response) => {
             cod_usuario_bono_entrega,
             cedula_vendedor,
             nombre_vendedor,
-            tienda
+            tienda,
+            cod_usuario
         } = req.body
 
         const dataUsuarioBonoEntrega = await generalService.getTableInformation('usuario_bono_entrega', 'cod_usuario_bono_entrega',cod_usuario_bono_entrega)
@@ -120,7 +121,8 @@ export const redimirBonoEntrega = async (req: Request, res: Response) => {
             comentario_cierre,
             cedula_vendedor,
             nombre_vendedor,
-            tienda
+            tienda,
+            cod_usuario
         }
 
         const actualizar = await entidadBonosDao.redimirBonoEntrega(JSON.stringify(newDataEntrega), cod_usuario_bono_entrega)
