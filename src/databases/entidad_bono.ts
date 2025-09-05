@@ -50,7 +50,9 @@ export const getBonos = async (filters: any)  => {
             if (value) {
                 switch (key) {
                     case 'codigo':
-                        query.whereRaw('u.codigo = ?', [value]);
+                        // TODO: Aca se pone un filtro solo por el primer caracter, toca volverlo a dejar de la otra forma
+                        // query.whereRaw('u.codigo = ?', [value]);
+                        query.whereRaw('LEFT(u.codigo, 1) = LEFT(?, 1)', [value]);
                         break;
                     case 'cedula':
                         query.whereRaw('u.cedula = ?', [value]);
