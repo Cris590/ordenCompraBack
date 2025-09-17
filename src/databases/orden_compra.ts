@@ -136,12 +136,14 @@ export const obtenerReporteBonosRedimidos = (codUsuario: number): Promise<any[]>
             db.raw(`JSON_UNQUOTE(JSON_EXTRACT(ube.data_entrega, '$.cedula_vendedor')) as cedula_vendedor`),
             db.raw(`JSON_UNQUOTE(JSON_EXTRACT(ube.data_entrega, '$.nombre_vendedor')) as nombre_vendedor`),
             db.raw(`JSON_UNQUOTE(JSON_EXTRACT(ube.data_entrega, '$.tienda')) as tienda`),
-            'u.nombre',
+            'u2.nombre',
             'u2.cedula',
             'u2.codigo',
             'u2.sexo',
             'cbp.valor',
-            'cbp.descripcion'
+            'cbp.descripcion',
+            'e.nombre as entidad',
+            'e.no_contrato'
         )
         .join('usuario as u', function () {
             this.on(
@@ -150,6 +152,7 @@ export const obtenerReporteBonosRedimidos = (codUsuario: number): Promise<any[]>
                 db.raw(`JSON_UNQUOTE(JSON_EXTRACT(ube.data_entrega, '$.cod_usuario'))`)
             );
         })
+        .join('entidad as e', 'u.cod_entidad', 'e.cod_entidad')
         .join('usuario as u2', 'u2.cod_usuario', 'ube.cod_usuario')
         .join('cargo_bonos_producto as cbp', function () {
             this.on(
