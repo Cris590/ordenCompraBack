@@ -12,3 +12,4 @@ router.post('/crear', ordenCompraService.crearOrdenCompra);
 
 router.get('/validar_orden/:codUsuario', ordenCompraService.validarOrdenUsuario);
 router.get('/usuarios_coordinador_entidad/', ordenCompraService.usuariosOrdenesCoordinador);
+router.get('/reporte_bonos_entregados/:codUsuario', ordenCompraService.reporteBonosEntregados);

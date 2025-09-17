@@ -297,3 +297,30 @@ export const usuariosOrdenesCoordinador= async (request: Request, res: Response)
     }
 
 }
+
+export const reporteBonosEntregados = async (request: Request, res: Response) => {
+    try {
+
+        let req = request as RequestToken
+        let { codUsuario} = req.params
+
+        let usuarios = await ordenCompraDao.obtenerReporteBonosRedimidos(+codUsuario)
+
+        res.send({
+            error:0,
+            usuarios
+        })
+
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al validar la orden del usuario'
+            }
+        })
+    }
+
+}
