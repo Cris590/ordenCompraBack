@@ -451,7 +451,9 @@ const limpiarUsuario = async (usuarioEntidad: IUsuarioCarga, codEntidad: number,
         if (!usuarioLimpio) return usuarioLimpio
 
         // Si existe usuario devuelvalo
-        const existeUsuario = await userDao.getUser(usuarioLimpio.cedula!)
+        const existeUsuario = await userDao.getUserCode(usuarioLimpio.cedula!,usuarioLimpio.codigo!)
+        console.log('-------------')
+        console.log(existeUsuario)
         if (existeUsuario) return null
 
         const passwordManager = new PasswordManager();

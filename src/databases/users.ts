@@ -24,6 +24,17 @@ export async function getUser(cedula: string): Promise<IUser> {
     .first()
 }
 
+export async function getUserCode(cedula: string,codigo:string): Promise<IUser> {
+  return db
+    .select("u.*","e.nombre as entidad","e.nit","e.entrega_bonos")
+    .from("usuario as u")
+    .leftJoin("entidad as e","u.cod_entidad","e.cod_entidad")
+    .where('u.cedula', cedula)
+    .andWhere('u.codigo',codigo)
+    .andWhere('u.cod_perfil',5)
+    .first()
+}
+
 export async function addRolesToUser(user: IUser): Promise<IUser> {
   const userRoles = await db
     .select(['ur.role as roleId', 'r.name'])
