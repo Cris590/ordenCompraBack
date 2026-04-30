@@ -150,14 +150,14 @@ export const getProductosEntidad = (categorias:number[] ): Promise<any[]> => {
 }
 
 
-export const getCargoBonoPorUsuario = (cedula: string , codEntidad:number): Promise<{cod_cargo_bonos_producto:number, cod_usuario:number}[]> => {
+export const getCargoBonoPorUsuario = (codUsuario: number , codEntidad:number): Promise<{cod_cargo_bonos_producto:number, cod_usuario:number}[]> => {
     return  db
     .select('cbp.cod_cargo_bonos_producto','u.cod_usuario')
     .from('cargo_bonos_producto as cbp')
     .join('cargo_entidad as ce', 'cbp.cod_cargo_entidad', 'ce.cod_cargo_entidad')
     .join('usuario as u', 'u.cod_cargo_entidad', 'ce.cod_cargo_entidad')
     .join('entidad as e', 'e.cod_entidad', 'u.cod_entidad')
-    .where('u.cedula', cedula.trim())
+    .where('u.cod_usuario', codUsuario)
     .andWhere('e.tipo_entrega_contrato',2)
     .andWhere('u.cod_perfil',5)
     .andWhere('e.cod_entidad',codEntidad)

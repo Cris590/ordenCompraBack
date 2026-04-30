@@ -88,7 +88,27 @@ export const createUser = async (user: IUser): Promise<{ createdUser: number; me
         const userId = await userDao.createUser(user);
         return {
             createdUser: userId[0],
-            message: 'User created',
+            message: 'Usuario creado correctamente.',
+        };
+    } catch (err: any) {
+        logErrorApp.error(`ERROR === { servicio:'users_service',error:${String(err)}  }`)
+        throw new Error("Error creando usuario" + err);
+    }
+};
+
+export const crearUsuarioAplicacionCompleta = async (user: IUser): Promise<{ createdUser: number; message: string }> => {
+    try {
+
+        const salt = bcrypt.genSaltSync();
+        user.password = (user.password) && bcrypt.hashSync(user.password, salt)
+
+        const userCreated = await userDao.getUser(user.cedula!)
+        if (userCreated) throw new Error('Usuario con cédula ' + user.cedula + ' ya esta creado')
+
+        const userId = await userDao.createUser(user);
+        return {
+            createdUser: userId[0],
+            message: 'Usuario creado correctamente.',
         };
     } catch (err: any) {
         logErrorApp.error(`ERROR === { servicio:'users_service',error:${String(err)}  }`)

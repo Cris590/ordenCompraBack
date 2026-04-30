@@ -24,6 +24,18 @@ export async function getUser(cedula: string): Promise<IUser> {
     .first()
 }
 
+export async function getUserCompleteApp(cedula: string): Promise<IUser> {
+  return db
+    .select("u.*","e.nombre as entidad","e.nit","e.entrega_bonos")
+    .from("usuario as u")
+    .leftJoin("entidad as e","u.cod_entidad","e.cod_entidad")
+    .where('u.cedula', cedula)
+    .andWhere('u.cod_perfil','<>',5)
+    .first()
+}
+
+
+
 export async function getUserCode(cedula: string,codigo:string): Promise<IUser> {
   return db
     .select("u.*","e.nombre as entidad","e.nit","e.entrega_bonos")
@@ -60,8 +72,20 @@ export async function getRoleByUserId(userId: number): Promise<any> {
     .where('user', userId);
 }
 
-export async function createUser(user: Partial<IUser> | IUser[]): Promise<number[]> {
-  return await db('usuario').insert(user)
+export async function createUser(users: Partial<IUser> | IUser[]): Promise<number[]> {
+  const ids: number[] = [];
+
+  await db.transaction(async trx => {
+    const lista = Array.isArray(users) ? users : [users];
+
+    for (const u of lista) {
+      const [id] = await trx('usuario').insert(u);
+      ids.push(id);
+    }
+  });
+
+  return ids;
+  
 }
 
 export const editarUsuario = async (data: Partial<IUser>, codUsuario: number) => {

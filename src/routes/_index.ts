@@ -11,6 +11,7 @@ import { router as ordenCompraRouter } from './orden_compra';
 import { router as solicituDotacionRouter } from './solicitud_dotacion';
 import { router as reporteRouter } from './reporte';
 import {router as entidadBonoRouter} from './entidad_bono'
+import {router as controlAccesosRouter} from './control-accesos'
 
 //Apis externas
 
@@ -33,7 +34,7 @@ router.use('/orden_compra', ordenCompraRouter);
 router.use('/solicitud_dotacion', solicituDotacionRouter);
 router.use('/reporte', reporteRouter);
 router.use('/entidad_bono', entidadBonoRouter);
-
+router.use('/control_accesos', controlAccesosRouter);
 
 
 

@@ -176,3 +176,9 @@ INSERT INTO u382376899_ordenes_brt.variable (nombre,valor) VALUES
     `cod_entidad` int(11) NOT NULL,
     PRIMARY KEY (`cod_usuario_bono_entrega`)
   ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci;
+
+
+  INSERT INTO u382376899_orden_pruebas.menu (label, route, icono, perfil, orden, activo, visible)
+values ('Control Accesos','control_accesos','io','[1]',3,1,1);
+
+ALTER TABLE u382376899_orden_pruebas.perfil ADD perfil_aplicacion_completa TINYINT DEFAULT 0 NULL;

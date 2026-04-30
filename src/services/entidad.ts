@@ -281,8 +281,8 @@ export const cargarUsuariosEntidad = async (req: Request, res: Response) => {
         }
 
         //Crear los registros de los bonos por usuario
-        for (const usuario of usuariosCreacion) {
-            await crearUsuarioBono(usuario.cedula!,+req.body.cod_entidad)
+        for (const codUsuario of usuariosCreados) {
+            await crearUsuarioBono(codUsuario,+req.body.cod_entidad)
         }
         
         res.send({
@@ -290,7 +290,9 @@ export const cargarUsuariosEntidad = async (req: Request, res: Response) => {
             msg: {
                 icon: 'success',
                 text: `Total de clientes cargados ( ${total} )`
-            }
+            },
+            usuariosCreados,
+            usuariosCreacion
         })
 
     } catch (e: any) {
@@ -304,10 +306,10 @@ export const cargarUsuariosEntidad = async (req: Request, res: Response) => {
     }
 }
 
-const crearUsuarioBono = async (cedula: string, codEntidad:number) => {
+const crearUsuarioBono = async (codUsuario: number, codEntidad:number) => {
     try {
         let bonosUsuario:any = []
-        let bonosProducto = await entidadDao.getCargoBonoPorUsuario(cedula, codEntidad);
+        let bonosProducto = await entidadDao.getCargoBonoPorUsuario(codUsuario, codEntidad);
 
         bonosProducto.forEach(({ cod_cargo_bonos_producto, cod_usuario }) => {
             bonosUsuario.push(
@@ -322,6 +324,17 @@ const crearUsuarioBono = async (cedula: string, codEntidad:number) => {
                 })
         });
 
+        await entidadDao.crearUsuarioBonoEntrega(bonosUsuario)
+
+
+    } catch (e) {
+
+    }
+}
+
+const crearUsuarioAplicacion = async (cedula: string) => {
+    try {
+        let bonosUsuario:any = []
         await entidadDao.crearUsuarioBonoEntrega(bonosUsuario)
 
 
@@ -542,7 +555,7 @@ export const crearUsuarioEntidad = async (req: Request, res: Response) => {
     try {
         let user = req.body as IUser
         let usuarioNuevo = await userService.createUser(user)
-        await crearUsuarioBono(user.cedula!, user.cod_entidad!)
+        await crearUsuarioBono(usuarioNuevo.createdUser, user.cod_entidad!)
 
         // Enviar correo al coordinador
         if (user.cod_perfil === 2 || user.cod_perfil === 6) {
@@ -574,11 +587,46 @@ export const crearUsuarioEntidad = async (req: Request, res: Response) => {
     }
 }
 
+export const crearUsuarioAplicacionCompleta = async (req: Request, res: Response) => {
+    try {
+        let user = req.body as IUser
+        let usuarioNuevo = await userService.crearUsuarioAplicacionCompleta(user)
+       
+        res.send({
+            error: 0,
+            cod_usuario: usuarioNuevo.createdUser,
+            msg: {
+                icon: 'success',
+                text: 'Usuario creado correctamente'
+            }
+        })
+
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: e.message
+            }
+        })
+    }
+}
+
 export const editarUsuarioEntidad = async (req: Request, res: Response) => {
     try {
 
         const { codUsuario } = req.params
         let usuario: IUser = req.body
+
+        const keysValidas = ['cedula','email','nombre','password']
+        
+        Object.keys(usuario).forEach((key) => {
+            if (!keysValidas.includes(key)) {
+                delete usuario[key as keyof IUser];
+            }
+        });
 
         await userService.editUser(usuario, +codUsuario)
         res.send({
