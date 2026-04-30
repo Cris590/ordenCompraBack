@@ -290,9 +290,7 @@ export const cargarUsuariosEntidad = async (req: Request, res: Response) => {
             msg: {
                 icon: 'success',
                 text: `Total de clientes cargados ( ${total} )`
-            },
-            usuariosCreados,
-            usuariosCreacion
+            }
         })
 
     } catch (e: any) {
