@@ -95,6 +95,41 @@ export const consultarBonoUsuario = async (req: Request, res: Response) => {
 
 }
 
+export const consultarEntidadesEntregaBonos = async (req: any, res: Response) => {
+    try {
+
+        const entidadesUsuario = (req.auth.user.entidades) ? JSON.parse(req.auth.user.entidades) : []
+        const entidades = await generalService.getEntidadesEntregaBonos() as { cod_entidad:number, nombre:string}[]
+
+        let entidadesFiltradas = [] as { cod_entidad:number, nombre:string}[]
+        console.log('TTTTTTTTTT')
+        console.log(entidadesUsuario)
+        console.log(entidades)
+        if(entidadesUsuario.length > 0){
+            entidadesFiltradas = entidades.filter(ent => entidadesUsuario.includes(ent.cod_entidad) );
+        }
+
+        console.log(entidades)
+
+        res.send({
+            error: 0,
+            entidades: entidadesFiltradas
+        })
+
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al consultar las usuarios bonos'
+            }
+        })
+    }
+
+}
+
 
 export const redimirBonoEntrega = async (req: Request, res: Response) => {
     try {   

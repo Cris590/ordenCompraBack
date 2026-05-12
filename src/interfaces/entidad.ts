@@ -22,3 +22,15 @@ export interface IUsuarioEntidad{
     cargo_entidad:string,
     redimido?:boolean
 }
+
+export interface IUsuarioCarga {
+    nombre: string,
+    documento: string,
+    email: string,
+    cargo: string,
+    lote: number,
+    sexo: string,
+    activo: number,
+    password: string,
+    codigo:string
+}

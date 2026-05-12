@@ -32,3 +32,12 @@ router.post('/crear_usuario_administrador',entidadService.crearUsuarioAplicacion
 router.get('/resumen_productos/:codEntidad', entidadService.resumenProductosEntidad);
 router.get('/prueba_correo', entidadService.pruebasCorreo);
 
+router.get('/obtener_categorias_crm', entidadService.obtenerCategoriasCrm);
+router.get('/obtener_subcategorias_crm/:idCategoria', entidadService.obtenerSubCategoriasCrm);
+router.get('/obtener_productos_asociados_crm/:codCargoBonosProductos', entidadService.obtenerProductosAsociados);
+
+router.post('/asociar_subcategoria_bonos_producto',entidadService.asociarSubCategoriaBonosProducto)
+
+router.put('/editar_asociacion/:codProductoAsociadoCategoria', entidadService.editarAsociacionSubcategoriaBonosProducto);
+router.delete('/borrar_asociacion/:codProductoAsociadoCategoria', entidadService.borrarAsociacion);
+

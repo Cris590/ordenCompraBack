@@ -20,6 +20,16 @@ export const config: KnexConfig = {
     debug: true,
   },
   production: {},
+  crmbrt: {
+    client: 'mysql2',
+    connection: {
+      host: process.env.DBHOST_CRM,
+      user: process.env.DBUSER_CRM,
+      password: process.env.DBPASS_CRM,
+      database: process.env.DB_CRM,
+      port: +(process.env.DBPORT_CRM ?? 3307)
+    }
+  }
 };
 
 

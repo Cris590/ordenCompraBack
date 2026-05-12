@@ -15,8 +15,10 @@ db.on('query', (message: any) => logDatabasePYS.info(formatMessages.queryFormat(
 
 export const getUsuariosAplicacionCompleta = () =>{
      return db
-        .select('u.cod_usuario','u.email','u.nombre','u.cedula as usuario','p.nombre as perfil','u.cod_perfil')
+        .select('u.cod_usuario','u.email','u.nombre','u.cedula as usuario','p.nombre as perfil','u.cod_perfil','u.entidades')
         .from('usuario as u')
         .join('perfil as p','u.cod_perfil','p.cod_perfil')
         .where('p.perfil_aplicacion_completa',1)
 }
+
+

@@ -182,3 +182,19 @@ INSERT INTO u382376899_ordenes_brt.variable (nombre,valor) VALUES
 values ('Control Accesos','control_accesos','io','[1]',3,1,1);
 
 ALTER TABLE u382376899_orden_pruebas.perfil ADD perfil_aplicacion_completa TINYINT DEFAULT 0 NULL;
+
+
+ALTER TABLE u382376899_orden_pruebas.usuario ADD entidades json NULL;
+CREATE TABLE u382376899_orden_pruebas.producto_asociado_subcategoria (
+	cod_producto_asociado_subcategoria INT AUTO_INCREMENT NOT NULL,
+	cod_subcategoria INT NULL,
+	cod_cargo_bonos_producto INT NULL,
+	valor INT NULL,
+	fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP NULL,
+	fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NULL,
+
+	PRIMARY KEY (cod_producto_asociado_subcategoria)
+)
+ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci;

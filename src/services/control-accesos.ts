@@ -16,10 +16,12 @@ import { IUser } from '../interfaces/user';
 export const getUsuariosAplicacion = async (req: Request, res: Response) => {
     try {
         
-        let usuarios = await controlAccesosDao.getUsuariosAplicacionCompleta()
+        const usuarios = await controlAccesosDao.getUsuariosAplicacionCompleta()
+        const entidades = await generalService.getEntidadesEntregaBonos()
         res.send({
             error: 0,
-            usuarios
+            usuarios,
+            entidades
         })
 
     } catch (e: any) {

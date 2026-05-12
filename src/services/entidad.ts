@@ -20,6 +20,7 @@ import { IUser } from '../interfaces/user';
 import { RequestToken } from '../interfaces/express';
 import { sendMail } from '../helpers/sendMail';
 import PasswordManager from '../helpers/passwordManager';
+import { IUsuarioCarga } from '../interfaces/entidad';
 
 export const obtenerEntidades = async (req: Request, res: Response) => {
     try {
@@ -341,17 +342,6 @@ const crearUsuarioAplicacion = async (cedula: string) => {
     }
 }
 
-interface IUsuarioCarga {
-    nombre: string,
-    documento: string,
-    email: string,
-    cargo: string,
-    lote: number,
-    sexo: string,
-    activo: number,
-    password: string,
-    codigo:string
-}
 
 const validarUsuarios = async (usuarios: IUsuarioCarga[], codEntidad: number) => {
     try {
@@ -929,24 +919,6 @@ export const resumenProductosEntidad = async (req: Request, res: Response) => {
             response
         })
 
-
-        let response2 = [{
-            cargo: 'SECRETARIA',
-            categorias: [{
-                nombre: 'BLUSAS',
-                sexos: [{
-                    nombre: 'FEMENINO',
-                    productos: [{
-                        nombre: 'Blusa Primatela',
-                        tallas: ['x', 'y', 'z'],
-                        colores: ['x', 'y', 'z'],
-                        cantidad: 1
-                    }]
-
-                }]
-            }]
-
-        }]
     } catch (e: any) {
         console.log('***********')
         console.log(e)
@@ -981,5 +953,205 @@ const validarCategoriasActivas = async (categoriasString: string) => {
         return categoriasActivas
     } catch (e) {
         return []
+    }
+}
+
+
+export const obtenerCategoriasCrm = async (req: Request, res: Response) => {
+    try {
+
+        const categorias = await generalService.getTableInformationCrm('categorias')
+         res.send({
+            error: 0,
+            categorias
+        })
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al consultar categorias CRM'
+            }
+        })
+    }
+
+}
+
+export const obtenerSubCategoriasCrm = async (req: Request, res: Response) => {
+    try {
+        const idCategoria = req.params.idCategoria
+        const subcategorias = await generalService.getTableInformationCrm('sub_categorias','id_categoria',idCategoria)
+         res.send({
+            error: 0,
+            subcategorias
+        })
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al consultar categorias CRM'
+            }
+        })
+    }
+
+}
+
+
+export const obtenerProductosAsociados = async (req: Request, res: Response) => {
+    try {
+        const codCargoBonosProductos = req.params.codCargoBonosProductos
+        const subcategoriasAsociados = await entidadDao.getProductosAsociados(+codCargoBonosProductos)
+
+        let subcategoriasAsociadaConsolidada:any = []
+        let codSubCategorias:number[] = []
+        if(subcategoriasAsociados.length > 0){
+            codSubCategorias = subcategoriasAsociados.map((registro)=>(registro.cod_subcategoria))
+            let subcategorias = await entidadDao.getSubCategoras(codSubCategorias)
+
+            for (const subCategoriaAsociada of subcategoriasAsociados) {
+                let subCategoria = subcategorias.find((subcategoria)=>subcategoria.cod_subcategoria == subCategoriaAsociada.cod_subcategoria)
+                subcategoriasAsociadaConsolidada.push({
+                    cod_producto_asociado_subcategoria:subCategoriaAsociada.cod_producto_asociado_subcategoria,
+                    cod_subcategoria:subCategoria?.cod_subcategoria,
+                    nombre: subCategoria?.nombre,
+                    valor: subCategoriaAsociada.valor
+                })
+            }
+
+        }
+
+         res.send({
+            error: 0,
+            subcategorias_asociadas:subcategoriasAsociadaConsolidada
+        })
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al consultar categorias CRM'
+            }
+        })
+    }
+
+}
+
+
+export const asociarSubCategoriaBonosProducto = async (req: Request, res: Response) => {
+    try {
+
+     
+        let asociacion = req.body
+        if(!asociacion.cod_cargo_bonos_producto || !asociacion.cod_subcategoria || !asociacion.valor){
+            res.send({
+                error: 1,
+                msg: {
+                    icon: 'error',
+                    text: 'Los parametros están mal configurados'
+                }
+            })
+        }
+        let nuevaAsociacion = await entidadDao.asociarSubCategoriaBonosProducto(asociacion)
+       
+        res.send({
+            error: 0,
+            cod_producto_asociado_subcategoria: nuevaAsociacion[0],
+            msg: {
+                icon: 'success',
+                text: 'Sub Categorias asociadas correctamente'
+            }
+        })
+
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: e.message
+            }
+        })
+    }
+}
+
+
+export const editarAsociacionSubcategoriaBonosProducto = async (req: Request, res: Response) => {
+    try {
+
+        let { codProductoAsociadoCategoria } = req.params
+        const {valor}=req.body
+        if(!valor){
+            res.send({
+                error: 1,
+                msg: {
+                    icon: 'error',
+                    text: 'Los parametros están mal configurados'
+                }
+            })
+        }
+        await entidadDao.actualizarAsociacionSubCategoriaBonosProducto({ valor }, +codProductoAsociadoCategoria)
+        res.send({
+            error: 0,
+            msg: {
+                icon: 'success',
+                text: 'Asociacion editada correctamente'
+            }
+        })
+
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al editar la identidad'
+            }
+        })
+    }
+
+}
+
+export const borrarAsociacion = async (req: Request, res: Response) => {
+    try {
+
+        let { codProductoAsociadoCategoria } = req.params
+        if( !codProductoAsociadoCategoria ){
+            return res.send({
+                error:1,
+                msg:{
+                    icon:'error',
+                    text:'Los parametros son obligatorios'
+                }
+            })
+        }
+        
+        await entidadDao.borrarAsociacionSubCategoriaBonosProducto(+codProductoAsociadoCategoria)
+        res.send({
+            error: 0,
+            msg:{
+                icon:'success',
+                text:'Se ha borrado la asociacion de esta subcategoria'
+            }
+        })
+        
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al editar el color para este producto, comuniquese con el administrador!'
+            }
+        })
     }
 }

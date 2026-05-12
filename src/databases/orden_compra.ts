@@ -128,7 +128,7 @@ export const obtenerUsuariosCoordinador = (codEntidad: number): Promise<any[]> =
         .orderBy('u.cod_usuario', 'desc')
 }
 
-export const obtenerReporteBonosRedimidos = (codUsuario: number): Promise<any[]> => {
+export const obtenerReporteBonosRedimidos = (codUsuario: number, codEntidad:number): Promise<any[]> => {
     return db('usuario_bono_entrega as ube')
         .select(
             db.raw(`JSON_UNQUOTE(JSON_EXTRACT(ube.data_entrega, '$.fecha_redimido')) as fecha_redimido`),
@@ -167,6 +167,7 @@ export const obtenerReporteBonosRedimidos = (codUsuario: number): Promise<any[]>
             '1'
         )
         .andWhere('u.cod_usuario', codUsuario)
+        .andWhere('e.cod_entidad',codEntidad)
         .orderBy('fecha_redimido','desc');
 
 }

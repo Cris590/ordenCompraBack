@@ -298,13 +298,17 @@ export const usuariosOrdenesCoordinador= async (request: Request, res: Response)
 
 }
 
-export const reporteBonosEntregados = async (request: Request, res: Response) => {
+export const reporteBonosEntregados = async (request: any, res: Response) => {
     try {
 
-        let req = request as RequestToken
-        let { codUsuario} = req.params
+        let { codEntidad} = request.params
+        const codUsuario = request.auth.user.cod_usuario
 
-        let usuarios = await ordenCompraDao.obtenerReporteBonosRedimidos(+codUsuario)
+        console.log('------------------')
+        console.log(codEntidad)
+        console.log(request.auth.user.cod_usuario)
+
+        let usuarios = await ordenCompraDao.obtenerReporteBonosRedimidos(+codUsuario, codEntidad)
 
         res.send({
             error:0,
