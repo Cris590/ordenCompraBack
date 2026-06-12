@@ -46,6 +46,7 @@ export const obtenerCategoriasActivas = async () : Promise<IProductoResumen[]> =
     .join('producto as p', 'c.cod_categoria','p.cod_categoria')
     .where('c.activo',1)
     .andWhere('p.activo',1)
+    .groupBy('c.cod_categoria')
 
 }
 
