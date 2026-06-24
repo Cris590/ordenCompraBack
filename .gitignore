@@ -6,4 +6,5 @@ tmp
 uploads/*
 dist
 credenciales.json
+docker-compose-dev.yml
 

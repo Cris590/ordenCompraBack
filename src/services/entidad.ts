@@ -1,8 +1,10 @@
 
 import { Request, Response } from 'express';
+import { PDFDocument } from "pdf-lib";
 import path from 'path';
 import bcrypt from 'bcryptjs'
 const fs = require("fs");
+
 
 // @ts-ignore
 import Handlebars from "handlebars";
@@ -11,16 +13,21 @@ const DEV = process.env.DEV || ''
 import * as generalService from './general'
 import * as entidadDao from '../databases/entidad'
 import * as userDao from '../databases/users';
-import * as userService from '../services/users';
 import * as ordenCompraDao from '../databases/orden_compra'
 import * as entidadBonosDao from '../databases/entidad_bono'
 
-import { processCSVFile } from '../helpers/csvUpload';
+import * as userService from '../services/users';
+
 import { IUser } from '../interfaces/user';
 import { RequestToken } from '../interfaces/express';
+import { IUsuarioCarga } from '../interfaces/entidad';
+
 import { sendMail } from '../helpers/sendMail';
 import PasswordManager from '../helpers/passwordManager';
-import { IUsuarioCarga } from '../interfaces/entidad';
+import { processCSVFile } from '../helpers/csvUpload';
+import { realizarLlamadoConsola } from '../helpers/llamadoConsola';
+import { generateRandomNumber } from '../helpers/general';
+import { generatePdfCartaHorizontal } from '../helpers/createDocumentPdf';
 
 export const obtenerEntidades = async (req: Request, res: Response) => {
     try {
@@ -253,7 +260,7 @@ export const cargarUsuariosEntidad = async (req: Request, res: Response) => {
 
         // Validar que las columnas si correspondan
 
-        let columnasValidas = ["NOMBRE", "CEDULA", "EMAIL", "CARGO", "LOTE", "SEXO", "ACTIVO", "PASSWORD","CODIGO"]
+        let columnasValidas = ["NOMBRE", "CEDULA", "EMAIL", "CARGO", "LOTE", "SEXO", "ACTIVO", "PASSWORD", "CODIGO"]
         let columnasArchivo = Object.keys(rows[0]).filter((value) => value.length > 0)
             .map((rowName) => rowName.toLocaleUpperCase().trim())
 
@@ -275,17 +282,17 @@ export const cargarUsuariosEntidad = async (req: Request, res: Response) => {
             total
         } = await validarUsuarios(rows, +req.body.cod_entidad)
 
-        let usuariosCreados:number[] = []
-        
+        let usuariosCreados: number[] = []
+
         if (usuariosCreacion.length > 0) {
-            usuariosCreados =await userDao.createUser(usuariosCreacion)
+            usuariosCreados = await userDao.createUser(usuariosCreacion)
         }
 
         //Crear los registros de los bonos por usuario
         for (const codUsuario of usuariosCreados) {
-            await crearUsuarioBono(codUsuario,+req.body.cod_entidad)
+            await crearUsuarioBono(codUsuario, +req.body.cod_entidad)
         }
-        
+
         res.send({
             error: 0,
             msg: {
@@ -305,16 +312,16 @@ export const cargarUsuariosEntidad = async (req: Request, res: Response) => {
     }
 }
 
-const crearUsuarioBono = async (codUsuario: number, codEntidad:number) => {
+const crearUsuarioBono = async (codUsuario: number, codEntidad: number) => {
     try {
-        let bonosUsuario:any = []
+        let bonosUsuario: any = []
         let bonosProducto = await entidadDao.getCargoBonoPorUsuario(codUsuario, codEntidad);
 
         bonosProducto.forEach(({ cod_cargo_bonos_producto, cod_usuario }) => {
             bonosUsuario.push(
                 {
                     cod_usuario,
-                    cod_entidad:codEntidad,
+                    cod_entidad: codEntidad,
                     data_entrega: JSON.stringify({
                         cod_cargo_bonos_producto,
                         redimido: 0,
@@ -333,7 +340,7 @@ const crearUsuarioBono = async (codUsuario: number, codEntidad:number) => {
 
 const crearUsuarioAplicacion = async (cedula: string) => {
     try {
-        let bonosUsuario:any = []
+        let bonosUsuario: any = []
         await entidadDao.crearUsuarioBonoEntrega(bonosUsuario)
 
 
@@ -452,7 +459,7 @@ const limpiarUsuario = async (usuarioEntidad: IUsuarioCarga, codEntidad: number,
         if (!usuarioLimpio) return usuarioLimpio
 
         // Si existe usuario devuelvalo
-        const existeUsuario = await userDao.getUserCode(usuarioLimpio.cedula!,usuarioLimpio.codigo!)
+        const existeUsuario = await userDao.getUserCode(usuarioLimpio.cedula!, usuarioLimpio.codigo!)
         console.log('-------------')
         console.log(existeUsuario)
         if (existeUsuario) return null
@@ -477,21 +484,21 @@ const limpiarUsuario = async (usuarioEntidad: IUsuarioCarga, codEntidad: number,
 export const obtenerUsuariosEntidad = async (req: Request, res: Response) => {
     try {
         let { codEntidad } = req.params
-        
+
         let infoEntidad = await generalService.getTableInformation('entidad', 'cod_entidad', codEntidad)
 
-        let usuariosEntidad = await entidadDao.getUsuariosIdentidad(codEntidad , infoEntidad[0].tipo_entrega_contrato)
-        let usuarios:any = []
-        
-        if(infoEntidad[0].tipo_entrega_contrato == 2){
+        let usuariosEntidad = await entidadDao.getUsuariosIdentidad(codEntidad, infoEntidad[0].tipo_entrega_contrato)
+        let usuarios: any = []
+
+        if (infoEntidad[0].tipo_entrega_contrato == 2) {
             for (const usuario of usuariosEntidad) {
-                
+
                 let bonosEntregados = await entidadBonosDao.getUsuarioBonoEntrega(usuario.cod_usuario)
-                let redimido = bonosEntregados.filter((bono)=>JSON.parse(bono.data_entrega).redimido == 0).length == 0
+                let redimido = bonosEntregados.filter((bono) => JSON.parse(bono.data_entrega).redimido == 0).length == 0
                 usuario.redimido = redimido
                 usuarios.push(usuario)
             }
-        }else{
+        } else {
             usuarios = usuariosEntidad
         }
         res.send({
@@ -579,7 +586,7 @@ export const crearUsuarioAplicacionCompleta = async (req: Request, res: Response
     try {
         let user = req.body as IUser
         let usuarioNuevo = await userService.crearUsuarioAplicacionCompleta(user)
-       
+
         res.send({
             error: 0,
             cod_usuario: usuarioNuevo.createdUser,
@@ -608,8 +615,8 @@ export const editarUsuarioEntidad = async (req: Request, res: Response) => {
         const { codUsuario } = req.params
         let usuario: IUser = req.body
 
-        const keysValidas = ['cedula','email','nombre','password']
-        
+        const keysValidas = ['cedula', 'email', 'nombre', 'password']
+
         Object.keys(usuario).forEach((key) => {
             if (!keysValidas.includes(key)) {
                 delete usuario[key as keyof IUser];
@@ -961,7 +968,7 @@ export const obtenerCategoriasCrm = async (req: Request, res: Response) => {
     try {
 
         const categorias = await generalService.getTableInformationCrm('categorias')
-         res.send({
+        res.send({
             error: 0,
             categorias
         })
@@ -982,8 +989,8 @@ export const obtenerCategoriasCrm = async (req: Request, res: Response) => {
 export const obtenerSubCategoriasCrm = async (req: Request, res: Response) => {
     try {
         const idCategoria = req.params.idCategoria
-        const subcategorias = await generalService.getTableInformationCrm('sub_categorias','id_categoria',idCategoria)
-         res.send({
+        const subcategorias = await generalService.getTableInformationCrm('sub_categorias', 'id_categoria', idCategoria)
+        res.send({
             error: 0,
             subcategorias
         })
@@ -1007,17 +1014,17 @@ export const obtenerProductosAsociados = async (req: Request, res: Response) => 
         const codCargoBonosProductos = req.params.codCargoBonosProductos
         const subcategoriasAsociados = await entidadDao.getProductosAsociados(+codCargoBonosProductos)
 
-        let subcategoriasAsociadaConsolidada:any = []
-        let codSubCategorias:number[] = []
-        if(subcategoriasAsociados.length > 0){
-            codSubCategorias = subcategoriasAsociados.map((registro)=>(registro.cod_subcategoria))
+        let subcategoriasAsociadaConsolidada: any = []
+        let codSubCategorias: number[] = []
+        if (subcategoriasAsociados.length > 0) {
+            codSubCategorias = subcategoriasAsociados.map((registro) => (registro.cod_subcategoria))
             let subcategorias = await entidadDao.getSubCategoras(codSubCategorias)
 
             for (const subCategoriaAsociada of subcategoriasAsociados) {
-                let subCategoria = subcategorias.find((subcategoria)=>subcategoria.cod_subcategoria == subCategoriaAsociada.cod_subcategoria)
+                let subCategoria = subcategorias.find((subcategoria) => subcategoria.cod_subcategoria == subCategoriaAsociada.cod_subcategoria)
                 subcategoriasAsociadaConsolidada.push({
-                    cod_producto_asociado_subcategoria:subCategoriaAsociada.cod_producto_asociado_subcategoria,
-                    cod_subcategoria:subCategoria?.cod_subcategoria,
+                    cod_producto_asociado_subcategoria: subCategoriaAsociada.cod_producto_asociado_subcategoria,
+                    cod_subcategoria: subCategoria?.cod_subcategoria,
                     nombre: subCategoria?.nombre,
                     valor: subCategoriaAsociada.valor
                 })
@@ -1025,9 +1032,9 @@ export const obtenerProductosAsociados = async (req: Request, res: Response) => 
 
         }
 
-         res.send({
+        res.send({
             error: 0,
-            subcategorias_asociadas:subcategoriasAsociadaConsolidada
+            subcategorias_asociadas: subcategoriasAsociadaConsolidada
         })
     } catch (e: any) {
         console.log('***********')
@@ -1047,9 +1054,9 @@ export const obtenerProductosAsociados = async (req: Request, res: Response) => 
 export const asociarSubCategoriaBonosProducto = async (req: Request, res: Response) => {
     try {
 
-     
+
         let asociacion = req.body
-        if(!asociacion.cod_cargo_bonos_producto || !asociacion.cod_subcategoria || !asociacion.valor){
+        if (!asociacion.cod_cargo_bonos_producto || !asociacion.cod_subcategoria || !asociacion.valor) {
             res.send({
                 error: 1,
                 msg: {
@@ -1059,7 +1066,7 @@ export const asociarSubCategoriaBonosProducto = async (req: Request, res: Respon
             })
         }
         let nuevaAsociacion = await entidadDao.asociarSubCategoriaBonosProducto(asociacion)
-       
+
         res.send({
             error: 0,
             cod_producto_asociado_subcategoria: nuevaAsociacion[0],
@@ -1087,8 +1094,8 @@ export const editarAsociacionSubcategoriaBonosProducto = async (req: Request, re
     try {
 
         let { codProductoAsociadoCategoria } = req.params
-        const {valor}=req.body
-        if(!valor){
+        const { valor } = req.body
+        if (!valor) {
             res.send({
                 error: 1,
                 msg: {
@@ -1124,25 +1131,25 @@ export const borrarAsociacion = async (req: Request, res: Response) => {
     try {
 
         let { codProductoAsociadoCategoria } = req.params
-        if( !codProductoAsociadoCategoria ){
+        if (!codProductoAsociadoCategoria) {
             return res.send({
-                error:1,
-                msg:{
-                    icon:'error',
-                    text:'Los parametros son obligatorios'
+                error: 1,
+                msg: {
+                    icon: 'error',
+                    text: 'Los parametros son obligatorios'
                 }
             })
         }
-        
+
         await entidadDao.borrarAsociacionSubCategoriaBonosProducto(+codProductoAsociadoCategoria)
         res.send({
             error: 0,
-            msg:{
-                icon:'success',
-                text:'Se ha borrado la asociacion de esta subcategoria'
+            msg: {
+                icon: 'success',
+                text: 'Se ha borrado la asociacion de esta subcategoria'
             }
         })
-        
+
     } catch (e: any) {
         console.log('***********')
         console.log(e)
@@ -1155,3 +1162,230 @@ export const borrarAsociacion = async (req: Request, res: Response) => {
         })
     }
 }
+
+export const obtenerTemplateCargoBono = async (req: Request, res: Response) => {
+    try {
+        const codCargoBonosProductos = req.params.codCargoBonosProductos
+        const templates = await generalService.getTableInformation('template_cargo_bonos_producto', 'cod_cargo_bonos_producto', codCargoBonosProductos)
+
+        let response = {
+            error: 0,
+            template: '',
+            cod_template_cargo_bonos_producto: 0
+        }
+
+        if (templates.length > 0) {
+            response.template = templates[0].template
+            response.cod_template_cargo_bonos_producto = templates[0].cod_template_cargo_bonos_producto
+        }
+
+        res.send(response)
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al consultar el template'
+            }
+        })
+    }
+
+}
+
+export const guardarTemplateCargoBono = async (req: Request, res: Response) => {
+    try {
+
+        const { codTemplateCargoBonosProducto } = req.params
+        let template: { cod_cargo_bonos_producto: number, template: string } = req.body
+        let codTemplate = +codTemplateCargoBonosProducto
+        if (codTemplateCargoBonosProducto && +codTemplateCargoBonosProducto != 0) {
+            await entidadDao.actualizarTemplateBonoProducto(+codTemplateCargoBonosProducto, template.template)
+        } else {
+            const newTemplate = await entidadDao.crearTemplateBonoProducto(template)
+            codTemplate = newTemplate[0]
+        }
+
+        res.send({
+            error: 0,
+            cod_template: codTemplate,
+            msg: {
+                icon: 'success',
+                text: 'Template editado correctamente'
+            }
+        })
+
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al editar el usuario'
+            }
+        })
+    }
+
+}
+
+export const generarBonosTemplate = async (req: Request, res: Response) => {
+
+    try {
+
+        const { codTemplateCargoBonosProducto } = req.params
+        const usuarios = await entidadDao.obtenerUsuariosTemplate(+codTemplateCargoBonosProducto)
+        const nombreInicial = generateRandomNumber(6)
+
+        for (const usuarioTemplate of usuarios) {
+            let template = usuarioTemplate.template
+            let basePath = path.join(process.cwd(), `documents_storage/bonos_template`, `${nombreInicial}_${usuarioTemplate.cod_usuario}`);
+            const htmlPath = `${basePath}.html`;
+            const pdfPath = `${basePath}.pdf`;
+
+            template = template.replace('<p>```html&nbsp;&nbsp;', "")
+                .replace('<p>```<\/p>', "");
+
+            for (const [key, value] of Object.entries(usuarioTemplate)) {
+                if (key != 'template') {
+                    template = template.replaceAll(
+                        `@${key}`,
+                        value?.toString() ?? ""
+                    );
+                }
+            }
+            fs.writeFileSync(htmlPath, template, "utf8");
+            let pdf = await generatePdfCartaHorizontal(pdfPath, htmlPath, true)
+            console.log('---------')
+            console.log(pdf)
+
+
+        }
+
+        await unirBonosDeA2(nombreInicial, `${nombreInicial}_final.pdf`)
+
+        const filePath = path.join(process.cwd(), `documents_storage/bonos_template/`, `${nombreInicial}_final.pdf`);
+
+        res.download(filePath, (err) => {
+            if (err) {
+                return res.send({
+                    error: 1,
+                    msg: {
+                        icon: 'error',
+                        text: 'Error al generar el archivo'
+                    }
+                })
+            }
+
+            // Borra el archivo después de enviarlo
+            fs.unlink(filePath, (unlinkErr:any) => {
+                if (unlinkErr) {
+                    console.error('Error al borrar el archivo:', unlinkErr);
+                }
+            });
+        });
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al crear los bonos en pdf'
+            }
+        })
+    }
+}
+
+export const unirBonosDeA2 = async (
+    nombreInicial: string,
+    outputFileName = "bonos_final.pdf"
+) => {
+    try {
+        const dir = path.join(
+            process.cwd(),
+            "documents_storage/bonos_template"
+        );
+
+        // 1. obtener PDFs del lote
+        const files = fs
+            .readdirSync(dir)
+            .filter((f: any) => f.endsWith(".pdf") && f.includes(nombreInicial))
+            .sort();
+
+        if (files.length === 0) {
+            return {
+                error: 1,
+                message: "No se encontraron PDFs"
+            };
+        }
+
+        const mergedPdf = await PDFDocument.create();
+
+        // tamaño carta horizontal (puntos PDF)
+        const PAGE_WIDTH = 792;
+        const PAGE_HEIGHT = 612;
+
+        // 2. recorrer de 2 en 2
+        for (let i = 0; i < files.length; i += 2) {
+            const file1 = files[i];
+            const file2 = files[i + 1];
+
+            // PDF 1
+            const pdf1Bytes = fs.readFileSync(path.join(dir, file1));
+            const pdf1 = await PDFDocument.load(pdf1Bytes);
+            const page1 = await mergedPdf.embedPage(pdf1.getPages()[0]);
+
+            // PDF 2 (opcional)
+            let page2 = null;
+            if (file2) {
+                const pdf2Bytes = fs.readFileSync(path.join(dir, file2));
+                const pdf2 = await PDFDocument.load(pdf2Bytes);
+                page2 = await mergedPdf.embedPage(pdf2.getPages()[0]);
+            }
+
+            // 3. crear página horizontal
+            const page = mergedPdf.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
+
+            // izquierda
+            page.drawPage(page1, {
+                x: 0,
+                y: 0,
+                width: PAGE_WIDTH / 2,
+                height: PAGE_HEIGHT
+            });
+
+            // derecha
+            if (page2) {
+                page.drawPage(page2, {
+                    x: PAGE_WIDTH / 2,
+                    y: 0,
+                    width: PAGE_WIDTH / 2,
+                    height: PAGE_HEIGHT
+                });
+            }
+        }
+
+        // 4. guardar archivo final
+        const outputPath = path.join(dir, outputFileName);
+        const pdfBytes = await mergedPdf.save();
+
+        fs.writeFileSync(outputPath, pdfBytes);
+        for (const file of files) {
+            fs.unlinkSync(path.join(dir, file));
+        }
+        return {
+            error: 0,
+            message: "PDF combinado correctamente",
+            path: outputPath
+        };
+
+    } catch (e) {
+        console.log(e);
+        return {
+            error: 1,
+            message: "Error al unir PDFs"
+        };
+    }
+};

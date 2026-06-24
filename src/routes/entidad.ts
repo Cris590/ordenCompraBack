@@ -41,3 +41,9 @@ router.post('/asociar_subcategoria_bonos_producto',entidadService.asociarSubCate
 router.put('/editar_asociacion/:codProductoAsociadoCategoria', entidadService.editarAsociacionSubcategoriaBonosProducto);
 router.delete('/borrar_asociacion/:codProductoAsociadoCategoria', entidadService.borrarAsociacion);
 
+router.get('/obtener_template_cargo_bono/:codCargoBonosProductos', entidadService.obtenerTemplateCargoBono);
+router.put('/guardar_template_cargo_bono/:codTemplateCargoBonosProducto',entidadService.guardarTemplateCargoBono)
+router.get('/generar_bonos_template/:codTemplateCargoBonosProducto',entidadService.generarBonosTemplate)
+
+
+

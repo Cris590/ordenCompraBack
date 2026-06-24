@@ -198,3 +198,14 @@ CREATE TABLE u382376899_orden_pruebas.producto_asociado_subcategoria (
 ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4
 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE u382376899_orden_pruebas.template_cargo_bonos_producto (
+	cod_template_cargo_bonos_producto INT auto_increment NOT NULL,
+	cod_cargo_bonos_producto INT NOT NULL,
+	template LONGTEXT NULL,
+	tags json NULL,
+	CONSTRAINT cod_template_cargo_bonos_producto PRIMARY KEY (cod_template_cargo_bonos_producto)
+)
+ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci;

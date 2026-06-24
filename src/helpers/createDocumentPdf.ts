@@ -79,4 +79,50 @@ const generatePdf = async (pdfPath: string, html: string): Promise<{ error: numb
     }
 };
 
+export const generatePdfCartaHorizontal = async (
+    pdfPath: string,
+    htmlPath: string,
+    deleteHtml = false,
+): Promise<{ error: number; message: string }> => {
+    try {
+        const options = {
+            width: "132mm",
+            height: "195mm",
 
+            printBackground: true,
+            path: pdfPath,
+
+            margin: {
+                top: "0",
+                bottom: "0",
+                left: "0",
+                right: "0",
+            },
+
+            preferCSSPageSize: false
+        };
+
+        console.log('-------------------')
+        console.log(options)
+        console.log(htmlPath)
+
+        const file = {
+            url: `file://${htmlPath}`
+        };
+        await htmlToPdf.generatePdf(file, options);
+
+        if (deleteHtml && htmlPath) {
+            fs.unlinkSync(htmlPath);
+        }
+
+        return {
+            error: 0,
+            message: "ok",
+        };
+    } catch (e) {
+        return {
+            error: 1,
+            message: "Error al crear PDF carta: " + String(e),
+        };
+    }
+};

@@ -42,6 +42,9 @@ COPY knexfile.ts .
 RUN mkdir -p /usr/src/app/documents_storage/storage && \
     chown -R node:node /usr/src/app/documents_storage/storage
 
+RUN mkdir -p /usr/src/app/documents_storage/bonos_template && \
+    chown -R node:node /usr/src/app/documents_storage/bonos_template
+
 COPY --from=build /usr/src/app/dist/. /usr/src/app/dist/
 COPY --from=build /usr/src/app/assets /usr/src/app/assets/
 COPY --from=build /usr/src/app/templates /usr/src/app/templates/

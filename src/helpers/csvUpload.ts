@@ -5,9 +5,17 @@ import fs from 'fs';
 export const processCSVFile = <T>(filePath: string): Promise<T[]> => {
     return new Promise((resolve, reject) => {
         const results: T[] = [];
+        // Detectar delimitador
+        const firstLine = fs
+            .readFileSync(filePath, "utf8")
+            .split(/\r?\n/)[0];
+
+        const separator = firstLine.includes(";") ? ";" : firstLine.includes("\t") ? "\t" : ",";
 
         fs.createReadStream(filePath)
-            .pipe(csv())
+            .pipe(csv({
+                    separator
+                }))
             .on('data', (data) => {
                 let dataAux = data as T
                 let cleanedKey = cleanKeys(dataAux)

@@ -202,4 +202,57 @@ export const borrarAsociacionSubCategoriaBonosProducto = async ( codProductoAsoc
   .delete();
 }
 
+export const crearTemplateBonoProducto = async (data: any) => {
+    return db('template_cargo_bonos_producto').insert(data);
+}
 
+export const actualizarTemplateBonoProducto = async (codTemplate:number,  template:string) => {
+    return await db('template_cargo_bonos_producto').where('cod_template_cargo_bonos_producto', codTemplate).update({template})
+}
+
+export const obtenerUsuariosTemplate = async (codTemplate:number) => {
+    const data = await db("usuario as u")
+    .select(
+        "u.cod_usuario",
+        "u.nombre",
+        "u.sexo",
+        "u.cedula",
+        "u.codigo",
+        "e.nombre as entidad",
+        "ce.nombre as cargo",
+        "ce.lote",
+        db.raw("FORMAT(cbp.valor, 0, 'de_DE') as valor"),
+        "cbp.nombre as producto_dotacion",
+        "e.nit",
+        "e.no_contrato",
+        db.raw("DATE_FORMAT(e.fecha_inicio, '%m-%d-%Y') as fecha_inicio"),
+    db.raw("DATE_FORMAT(e.fecha_final, '%m-%d-%Y') as fecha_final"),
+        "tcbp.template"
+    )
+    .join("usuario_bono_entrega as ube", "u.cod_usuario", "ube.cod_usuario")
+    .joinRaw(`
+        INNER JOIN cargo_bonos_producto cbp
+            ON CAST(
+                JSON_UNQUOTE(
+                    JSON_EXTRACT(
+                        ube.data_entrega,
+                        '$.cod_cargo_bonos_producto'
+                    )
+                ) AS UNSIGNED
+            ) = cbp.cod_cargo_bonos_producto
+    `)
+    .join(
+        "template_cargo_bonos_producto as tcbp",
+        "cbp.cod_cargo_bonos_producto",
+        "tcbp.cod_cargo_bonos_producto"
+    )
+    .join("entidad as e", "u.cod_entidad", "e.cod_entidad")
+    .join(
+        "cargo_entidad as ce",
+        "ce.cod_cargo_entidad",
+        "cbp.cod_cargo_entidad"
+    )
+    .where("tcbp.cod_template_cargo_bonos_producto", codTemplate);
+
+    return data
+}
