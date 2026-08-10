@@ -209,3 +209,7 @@ CREATE TABLE u382376899_orden_pruebas.template_cargo_bonos_producto (
 ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4
 COLLATE=utf8mb4_unicode_ci;
+
+
+INSERT into menu (label,route,icono, perfil, orden, activo, visible)
+values ('E-Tallaje','e-tallajes','io','[7]',2,1,1);

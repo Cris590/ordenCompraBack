@@ -66,3 +66,56 @@ export const editarUsuario = async (req: Request, res: Response) => {
     }
 
 }
+
+
+export const obtenerPerfilesAplicacion = async (req: Request, res: Response) => {
+    try {
+
+       const perfiles = await controlAccesosDao.obtenerPerfilesAplicacion()
+        res.send({
+            error: 0,
+           perfiles
+        })
+
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al obtener perfiles'
+            }
+        })
+    }
+
+}
+
+export const crearUsuario = async (req: Request, res: Response) => {
+    try {
+
+        let usuario: IUser = req.body
+
+        await userService.crearUsuarioAplicacionCompleta(usuario)
+        res.send({
+            error: 0,
+            msg: {
+                icon: 'success',
+                text: 'Usuario creado correctamente'
+            }
+        })
+
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al editar el usuario'
+            }
+        })
+    }
+
+}
+

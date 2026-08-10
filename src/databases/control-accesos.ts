@@ -22,3 +22,12 @@ export const getUsuariosAplicacionCompleta = () =>{
 }
 
 
+
+export const obtenerPerfilesAplicacion = () =>{
+     return db
+        .select('cod_perfil','nombre')
+        .from('perfil')
+        .where('perfil_aplicacion_completa',1)
+}
+
+

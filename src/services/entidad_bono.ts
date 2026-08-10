@@ -102,9 +102,6 @@ export const consultarEntidadesEntregaBonos = async (req: any, res: Response) =>
         const entidades = await generalService.getEntidadesEntregaBonos() as { cod_entidad:number, nombre:string}[]
 
         let entidadesFiltradas = [] as { cod_entidad:number, nombre:string}[]
-        console.log('TTTTTTTTTT')
-        console.log(entidadesUsuario)
-        console.log(entidades)
         if(entidadesUsuario.length > 0){
             entidadesFiltradas = entidades.filter(ent => entidadesUsuario.includes(ent.cod_entidad) );
         }

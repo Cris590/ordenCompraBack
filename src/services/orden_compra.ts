@@ -208,7 +208,7 @@ export const validarOrdenUsuario = async (request: Request, res: Response) => {
             if(usuarioInfo.length > 0 && 
                 (
                     usuarioInfo[0].cod_perfil !== 3 || 
-                    usuarioInfo[0].cod_entidad !== req.auth.user.cod_entidad
+                    (req.auth.user.cod_perfil != 1 && usuarioInfo[0].cod_entidad !== req.auth.user.cod_entidad )                    
                 )
             )
             {

@@ -7,3 +7,5 @@ dotenv.config();
 export const router = express.Router();
 router.get('/usuarios/', controlAccesosService.getUsuariosAplicacion);
 router.put('/actualizar_usuario/:codUsuario', controlAccesosService.editarUsuario);
+router.get('/obtener_perfiles/', controlAccesosService.obtenerPerfilesAplicacion);
+router.post('/crear_usuario/', controlAccesosService.crearUsuario);
