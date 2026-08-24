@@ -126,3 +126,54 @@ export const generatePdfCartaHorizontal = async (
         };
     }
 };
+
+
+export const generatePdfTicket = async (
+    pdfPath: string,
+    htmlPath: string,
+    height: number,
+    deleteHtml = false,
+): Promise<{ error: number; message: string }> => {
+
+    try {
+
+        const options: any = {
+            width: "88mm",
+            printBackground: true,
+            path: pdfPath,
+            margin: {
+                top: "2mm",
+                bottom: "2mm",
+                left: "2mm",
+                right: "2mm",
+            },
+            preferCSSPageSize: false,
+            height: `${height}mm`,
+        };
+
+        /**
+         * Si conocemos una altura específica,
+         * la enviamos a Puppeteer.
+         */
+        
+        const file = {url: `file://${htmlPath}`};
+
+        await htmlToPdf.generatePdf(file, options);
+        if (deleteHtml && htmlPath) {fs.unlinkSync(htmlPath);}
+
+        return {
+            error: 0,
+            message: "ok",
+        };
+
+    } catch (e) {
+
+        console.log('*** ERROR CREAR PDF TICKET ****');
+        console.log(e);
+
+        return {
+            error: 1,
+            message: "Error al crear PDF ticket: " + String(e),
+        };
+    }
+};

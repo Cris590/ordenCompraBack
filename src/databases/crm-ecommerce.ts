@@ -106,7 +106,8 @@ export const obtenerProductosCrm = ({page, perPage, buscar, idCategoria,idSubCat
         query.where(function () {
             this.where('p.descripcion', 'like', `%${buscar}%`)
                 .orWhere('p.codigo', 'like', `%${buscar}%`)
-                .orWhere('p.lote', 'like', `%${buscar}%`);
+                .orWhere('p.lote', 'like', `%${buscar}%`)
+                .orWhere('p.codigo_modelo', 'like', `%${buscar}%`);;
         });
     }
 
@@ -126,6 +127,7 @@ export const obtenerProductosCrm = ({page, perPage, buscar, idCategoria,idSubCat
             'c.categoria',
             'p.id_sub_categoria',
             'sc.sub_categoria',
+            'sc.id_woo as id_woo_subcategoria',
             dbCrm.raw(`
                 CONCAT(
                     LEFT(p.codigo, 4),
@@ -180,6 +182,10 @@ export const actualizarProductoCrm = (codigoModelo: string, producto: IActualiza
     return dbCrm('productos').where('codigo_modelo', codigoModelo).update(producto)
 }
 
+export const actualizarProductoIndividualCrm = (idProducto: string, producto: IActualizarProductoCrm) => {
+    return dbCrm('productos').where('id', idProducto).update(producto)
+}
+
 export const crearColorProductoCrm = (color: ICrearProductoColorCrm) => {
     return dbCrm('producto_color').insert(color);
 }
@@ -228,4 +234,23 @@ export const getTallasActivasCrm = async () => {
 
 export const crearProductoCrm = async (data: IProductoNuevoCrm | IProductoNuevoCrm[]) => {
   return dbCrm('productos').insert(data);
+}
+
+export const obtenerColorEImagenPorProducto = (codigoModelo:string) => {
+    return dbCrm
+        .select('*')
+        .from('producto_color as pc')
+        .leftJoin('producto_color_imagen as pci', 'pc.cod_producto_color', 'pci.cod_producto_color')
+        .where('pc.codigo_modelo', codigoModelo)
+}
+
+export const obtenerInventarioProducto = (idProducto:number) => {
+    return dbCrm.select(
+            dbCrm.raw('COALESCE(SUM(i.stock), 0) as stock')
+        )
+        .from('inventarios as i')
+        .join('bodegas as b', 'b.id', 'i.id_tienda')
+        .where('i.id_cod_producto', idProducto)
+        .andWhere('b.inventario_ecommerce', 1)
+        .andWhere('i.stock', '>', 0)
 }

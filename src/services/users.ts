@@ -121,8 +121,13 @@ export const editUser = async (user: IUser, codUsuario: number): Promise<{ error
 
         const salt = bcrypt.genSaltSync();
         if (user.password && user.password?.length > 0) {
+            console.log('---- Si paila, si entre ----', user.password)
             user.password = (user.password) && bcrypt.hashSync(user.password, salt)
+        }else{
+            delete user.password
         }
+
+        
 
         await userDao.editarUsuario(user, codUsuario);
         return {

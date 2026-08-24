@@ -4,9 +4,10 @@ const DEV = process.env.DEV || ''
 
 import * as generalService from './general'
 import * as crmEcommerceDao from '../databases/crm-ecommerce'
-import * as ecommerceIntegration from './ecommerce/categorias_woo'
+import * as ecommerceIntegration from './ecommerce/_index'
 import { borrarArchivo, subirArchivo } from '../helpers/subir-archivo';
 import { IEditarProductoModelo, IProductoNuevoCrm } from '../interfaces/crm-ecommerce';
+import { INuevaVariacionWoo, INuevoEProductoWoo, IRespuestaCreacionEProducto } from '../interfaces/api/ecommerce';
 
 export const crearCategoria = async (req: Request, res: Response) => {
     try {
@@ -594,7 +595,7 @@ export const obtenerTallasProducto = async (req: Request, res: Response) => {
         res.send({
             error: 0,
             tallas: tallas.map((talla) => talla.talla),
-            cod_tallaje: tallas.length> 0 ? tallas[0].cod_tallaje : 0
+            cod_tallaje: tallas.length > 0 ? tallas[0].cod_tallaje : 0
         })
 
     } catch (e: any) {
@@ -867,6 +868,11 @@ export const editarProductoCrm = async (req: Request, res: Response) => {
             precio_venta: producto.precio_venta
         }
         await crmEcommerceDao.actualizarProductoCrm(producto.codigo_modelo, productoEdicion)
+
+        let productoWoo
+        if (producto.sincronizar_ecommerce) {
+            productoWoo = await crearProductoWoo(producto)
+        }
         res.send({
             error: 0,
             msg: {
@@ -934,7 +940,7 @@ export const crearProductoCrm = async (req: Request, res: Response) => {
                     precio_compra: producto.precio_compra,
                     precio_venta: producto.precio_venta,
                     activo: producto.activo,
-                    cod_tallaje:producto.cod_tallaje,
+                    cod_tallaje: producto.cod_tallaje,
                     talla,
                     color
                 }
@@ -948,8 +954,14 @@ export const crearProductoCrm = async (req: Request, res: Response) => {
             await crmEcommerceDao.crearProductoCrm(productosNuevos)
         }
 
+        let productoWoo
+        if (producto.sincronizar_ecommerce) {
+            productoWoo = await crearProductoWoo(producto)
+        }
+
         res.send({
             error: 0,
+            productoWoo,
             msg: {
                 icon: 'success',
                 text: 'Productos creados correctamente.'
@@ -970,3 +982,125 @@ export const crearProductoCrm = async (req: Request, res: Response) => {
 
 }
 
+const crearProductoWoo = async (producto: IEditarProductoModelo) => {
+    try {
+
+        const colores = await crmEcommerceDao.obtenerColorEImagenPorProducto(producto.codigo_modelo)
+        const subcategoriaInfo = await generalService.getTableInformationCrm('sub_categorias', 'id', producto.id_sub_categoria)
+
+        if (subcategoriaInfo.length === 0 || !subcategoriaInfo[0].id_woo) {
+            return {
+                error: 1,
+                msg: {
+                    icon: 'error',
+                    text: 'Debes asociar la subcategoria al e-commerce antes de crear el producto.'
+                }
+            }
+        }
+
+        const nuevoProducto: INuevoEProductoWoo = {
+            name: producto.descripcion,
+            type: "variable",
+            sku: producto.codigo_modelo,
+            regular_price: String(producto.precio_venta),
+            tax_status: "taxable",
+            images: [
+                {
+                    "src": colores[0].url
+                }
+            ]
+            ,
+            categories: [
+                {
+                    id: subcategoriaInfo[0].id_woo
+                }
+            ],
+            attributes: [
+                {
+                    "name": "Color",
+                    "visible": true,
+                    "variation": true,
+                    "options": [...new Set(
+                        colores.map((color) => color.nombre_color)
+                    )]
+                },
+                {
+                    "name": "Talla",
+                    "visible": true,
+                    "variation": true,
+                    "options": producto.tallas
+                }
+            ]
+        }
+
+        let idWooPadre = 0
+        const validarProducto = await generalService.getTableInformationCrm('productos', 'codigo_modelo', producto.codigo_modelo)
+        console.log('Info validar producto')
+        console.log(validarProducto)
+        console.log('Vamos a validar', validarProducto.length > 0 && validarProducto[0].id_woo_producto)
+
+        if (validarProducto.length > 0 && !!validarProducto[0].id_woo_producto) {
+            idWooPadre = +validarProducto[0].id_woo_producto
+            await ecommerceIntegration.actualizarProductoWoo(idWooPadre, nuevoProducto)
+        } else {
+            const productoWoo = await ecommerceIntegration.crearProductoWoo(nuevoProducto)
+            await crmEcommerceDao.actualizarProductoCrm(producto.codigo_modelo, { id_woo_producto: productoWoo.id })
+            idWooPadre = productoWoo.id
+        }
+
+
+        /**Crear variaciones */
+
+        const variacionesWoo = await crearVariacionesWoo(producto, idWooPadre)
+
+        return { variacionesWoo }
+
+    } catch (e) {
+        return e
+    }
+}
+
+const crearVariacionesWoo = async (producto: IEditarProductoModelo, idPadreWoo: number) => {
+    try {
+        const productosCrm = await generalService.getTableInformationCrm('productos', 'codigo_modelo', producto.codigo_modelo)
+        const coloresProducto = await crmEcommerceDao.obtenerColorEImagenPorProducto(producto.codigo_modelo)
+
+        for (const productoCrm of productosCrm) {
+            const colorProducto = coloresProducto.filter((color) => color.codigo_color === productoCrm.color)[0]
+            const stockProducto = await crmEcommerceDao.obtenerInventarioProducto(productoCrm.id)
+            
+            const variacion: INuevaVariacionWoo = {
+                regular_price: String(producto.precio_venta),
+                sale_price: "",
+                manage_stock: true,
+                stock_quantity: stockProducto[0].stock,
+                tax_status: "taxable",
+                sku: productoCrm.codigo,
+                image: {
+                    src: colorProducto.url || undefined
+                },
+                attributes: [
+                    {
+                        name: "Color",
+                        option: colorProducto.nombre_color
+                    },
+                    {
+                        name: "Talla",
+                        option: productoCrm.talla
+                    }
+                ]
+            };
+            if (!!productoCrm.id_woo_variante_producto) {
+                await ecommerceIntegration.actualizarVariacionWoo(idPadreWoo, productoCrm.id_woo_variante_producto, variacion);
+            } else {
+                const variacionWoo = await ecommerceIntegration.crearVariacionWoo(idPadreWoo, variacion);
+                await crmEcommerceDao.actualizarProductoIndividualCrm(productoCrm.id, { id_woo_variante_producto: variacionWoo.id })
+            }
+        }
+
+    } catch (e) {
+        console.log('ERROR CREANDO VARIACIONES WOO');
+        console.log(e);
+        throw e;
+    }
+}

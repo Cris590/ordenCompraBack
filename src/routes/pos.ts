@@ -1,0 +1,27 @@
+import dotenv from 'dotenv';
+import express from 'express';
+import * as posService from '../services/pos';
+
+dotenv.config();
+
+export const router = express.Router();
+
+router.get('/obtener_medios_pagos', posService.obtenerMediosPago);
+router.get('/obtener_cliente_por_documento/:documento', posService.obtenerClientePorDocumento);
+router.get('/obtener_tiendas_pos_usuario', posService.obtenerTiendasPosUsuario);
+router.get('/vendedores_crm', posService.obtenerVendedoresCrm);
+router.get('/vendedores_por_tienda', posService.obtenerVendedoresPorTienda);
+router.get('/obtener_info_producto/:codigo', posService.obtenerInfoProductoVenta);
+
+
+router.post('/obtener_ventas_crm/', posService.obtenerVentasCrm);
+router.post('/crear_venta/', posService.crearVentaCrm);
+router.get('/obtener_venta_detalle/:id_venta', posService.obtenerVentaDetalle);
+router.get('/generar_factura_pdf/:id_venta', posService.generarFactura);
+
+router.get('/obtener_tipos_documento/', posService.obtenerTiposDocumento);
+router.get('/obtener_clientes/', posService.obtenerClientesPos);
+router.put('/actualizar_cliente_crm/:idCliente', posService.actualizarClienteCrm);
+router.post('/crear_cliente_crm/', posService.crearClienteCrm);
+
+

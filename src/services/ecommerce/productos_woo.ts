@@ -1,52 +1,217 @@
 import axios from "axios";
-import { INuevaECategoria, INuevoEProducto, IRespuestaCreacionECategoria, IRespuestaCreacionEProducto} from "../../interfaces/api/ecommerce";
+import {
+    IActualizarProductoWoo,
+    IActualizarVariacionWoo,
+    INuevaECategoria,
+    INuevaVariacionWoo,
+    INuevoEProductoWoo,
+    IRespuestaCreacionECategoria,
+    IRespuestaCreacionEProducto,
+    IRespuestaCreacionEVariacion
+} from "../../interfaces/api/ecommerce";
 import { logIntegracionesEcommerce } from "../../helpers/logger";
-const WOOCOMERCE_URL = process.env.WOOCOMERCE_URL
+
+const WOOCOMMERCE_URL = process.env.WOOCOMERCE_URL
 
 const api = axios.create({
-    baseURL: WOOCOMERCE_URL,
+    baseURL: WOOCOMMERCE_URL,
     auth: {
         username: process.env.WOOCOMERCE_CLIENT_KEY!,
         password: process.env.WOOCOMERCE_CLIENT_SECRET!
     }
 });
 
+
+
 export const crearProductoWoo = async (
-    producto: INuevoEProducto
+    producto: INuevoEProductoWoo
 ): Promise<IRespuestaCreacionEProducto> => {
-    const { data } = await api.post<IRespuestaCreacionEProducto>(
-        "/products",
-        producto
-    );
 
-    const log = {
-        url: `${WOOCOMERCE_URL}/products`,
-        type: "post",
-        request: producto,
-        response: data
-    };
+    const url = `${WOOCOMMERCE_URL}/products`;
 
-    logIntegracionesEcommerce.info(JSON.stringify(log));
-    return data;
+    try {
+
+        const { data } = await api.post<IRespuestaCreacionEProducto>(
+            "/products",
+            producto
+        );
+
+        const log = {
+            url,
+            type: "post",
+            request: producto,
+            response: data
+        };
+
+        logIntegracionesEcommerce.info(JSON.stringify(log));
+
+        return data;
+
+    } catch (e: any) {
+
+        const log = {
+            url,
+            type: "post",
+            request: producto,
+            response: e.response?.data ?? null,
+            status: e.response?.status ?? null,
+            error: e.message
+        };
+
+        logIntegracionesEcommerce.error(JSON.stringify(log));
+
+        throw e;
+    }
 };
 
+
+export const crearVariacionWoo = async (
+    idProductoWoo: number,
+    variacion: INuevaVariacionWoo
+): Promise<IRespuestaCreacionEVariacion> => {
+
+    const url = `${WOOCOMMERCE_URL}/products/${idProductoWoo}/variations`;
+
+    try {
+
+        const { data } = await api.post<IRespuestaCreacionEVariacion>(
+            `/products/${idProductoWoo}/variations`,
+            variacion
+        );
+
+        const log = {
+            url,
+            type: "post",
+            request: variacion,
+            response: data
+        };
+
+        logIntegracionesEcommerce.info(
+            JSON.stringify(log)
+        );
+
+        return data;
+
+    } catch (e: any) {
+
+        const log = {
+            url,
+            type: "post",
+            request: variacion,
+            response: e.response?.data ?? null,
+            status: e.response?.status ?? null,
+            error: e.message
+        };
+
+        logIntegracionesEcommerce.error(
+            JSON.stringify(log)
+        );
+
+        throw e;
+    }
+};
+
+
 export const actualizarProductoWoo = async (
-    idProducto: number,
-    producto: Partial<INuevoEProducto>
+    idProductoWoo: number,
+    producto: IActualizarProductoWoo
 ): Promise<IRespuestaCreacionEProducto> => {
-    const { data } = await api.put<IRespuestaCreacionEProducto>(
-        `/products/${idProducto}`,
-        producto
-    );
+    
+    const url = `${WOOCOMMERCE_URL}/products/${idProductoWoo}`;
 
-    const log = {
-        url: `${WOOCOMERCE_URL}/products/${idProducto}`,
-        type: "put",
-        request: producto,
-        response: data
-    };
+    try {
 
-    logIntegracionesEcommerce.info(JSON.stringify(log));
+        const { data } = await api.put<IRespuestaCreacionEProducto>(
+            `/products/${idProductoWoo}`,
+            producto
+        );
 
-    return data;
+        const log = {
+            url,
+            type: "put",
+            request: producto,
+            response: data
+        };
+
+        console.log('------ Vamos a actualizar producto ------')
+        console.log(producto)
+        console.log(log)
+    
+        logIntegracionesEcommerce.info(
+            JSON.stringify(log)
+        );
+
+        return data;
+
+    } catch (e: any) {
+
+        const log = {
+            url,
+            type: "put",
+            request: producto,
+            response: e.response?.data ?? null,
+            status: e.response?.status ?? null,
+            error: e.message
+        };
+
+        logIntegracionesEcommerce.error(
+            JSON.stringify(log)
+        );
+
+        throw e;
+    }
+};
+
+
+export const actualizarVariacionWoo = async (
+    idProductoWoo: number,
+    idVariacionWoo: number,
+    variacion: IActualizarVariacionWoo
+): Promise<IRespuestaCreacionEVariacion> => {
+
+    const url =
+        `${WOOCOMMERCE_URL}/products/${idProductoWoo}/variations/${idVariacionWoo}`;
+
+    try {
+
+        const { data } = await api.put<IRespuestaCreacionEVariacion>(
+            `/products/${idProductoWoo}/variations/${idVariacionWoo}`,
+            variacion
+        );
+
+        const log = {
+            url,
+            type: "put",
+            request: variacion,
+            response: data
+        };
+
+        
+        console.log('------ Vamos a actualizar variacion ------')
+        console.log(variacion)
+        console.log(log)
+
+        logIntegracionesEcommerce.info(
+            JSON.stringify(log)
+        );
+
+        return data;
+
+    } catch (e: any) {
+
+        const log = {
+            url,
+            type: "put",
+            request: variacion,
+            response: e.response?.data ?? null,
+            status: e.response?.status ?? null,
+            error: e.message
+        };
+
+        logIntegracionesEcommerce.error(
+            JSON.stringify(log)
+        );
+
+        throw e;
+    }
 };

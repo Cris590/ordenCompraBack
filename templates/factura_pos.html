@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            width: 88mm;
+
+            font-family: Arial, Helvetica, sans-serif;
+
+            font-size: 10px;
+
+            color: #000;
+
+            line-height: 1.35;
+        }
+
+        .empresa {
+            text-align: center;
+
+            padding-top: 5px;
+            padding-bottom: 8px;
+        }
+
+        .nombre-empresa {
+            font-weight: bold;
+        }
+
+        .factura-titulo {
+            text-align: center;
+
+            font-weight: bold;
+
+            margin-top: 8px;
+            margin-bottom: 10px;
+        }
+
+        .seccion {
+            padding-bottom: 8px;
+        }
+
+        .cliente {
+            border-bottom: 1px solid #000;
+
+            padding-bottom: 8px;
+        }
+
+        table {
+            width: 100%;
+
+            border-collapse: collapse;
+
+            table-layout: fixed;
+        }
+
+        .productos {
+            margin-top: 8px;
+            margin-bottom: 8px;
+        }
+
+        .productos th {
+            border-bottom: 1px solid #000;
+
+            text-align: left;
+
+            font-weight: normal;
+
+            padding-bottom: 4px;
+        }
+
+        .productos td {
+            vertical-align: top;
+
+            padding-top: 5px;
+            padding-bottom: 5px;
+
+            word-break: break-word;
+        }
+
+        .codigo {
+            width: 17%;
+        }
+
+        .producto {
+            width: 32%;
+        }
+
+        .cantidad {
+            width: 10%;
+        }
+
+        .valor {
+            width: 20.5%;
+        }
+
+        .resumen {
+            border-top: 1px solid #000;
+
+            padding-top: 6px;
+        }
+
+        .fila {
+            display: flex;
+
+            justify-content: space-between;
+
+            width: 100%;
+
+            margin-bottom: 5px;
+        }
+
+        .total {
+            font-weight: bold;
+
+            margin-top: 5px;
+        }
+
+        .metodos-titulo {
+            margin-top: 10px;
+            margin-bottom: 6px;
+
+            font-weight: bold;
+        }
+
+        .pago {
+            margin-bottom: 5px;
+        }
+
+        .footer {
+            margin-top: 15px;
+
+            text-align: left;
+        }
+
+        .devoluciones {
+            margin-bottom: 15px;
+        }
+
+        .resolucion {
+            margin-bottom: 15px;
+        }
+
+        .vigencia {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ========================= -->
+    <!-- EMPRESA -->
+    <!-- ========================= -->
+
+    <div class="empresa">
+
+        <div class="nombre-empresa">
+            {{nombre_empresa}}
+        </div>
+
+        <div>
+            NIT: {{nit_empresa}}
+        </div>
+
+        {{#if nombre_comercial}}
+        <div>
+            {{{nombre_comercial}}}
+        </div>
+        {{/if}}
+
+        <div>
+            Dirección: {{direccion_tienda}}
+        </div>
+
+        <div>
+            Teléfono: {{telefono_tienda}} / 601-4559328
+        </div>
+
+        <div>
+            Email: {{correo_empresa}}
+        </div>
+
+        <div>
+            {{responsabilidad_fiscal}}
+        </div>
+
+    </div>
+
+
+    <!-- ========================= -->
+    <!-- FACTURA -->
+    <!-- ========================= -->
+
+    <div class="factura-titulo">
+        FACTURA N. {{codigo}}
+    </div>
+
+
+    <!-- ========================= -->
+    <!-- INFORMACIÓN -->
+    <!-- ========================= -->
+
+    <div class="seccion">
+
+        <div>
+            Fecha: {{fecha}}
+        </div>
+
+        <div>
+            Hora: {{hora}}
+        </div>
+
+        <div>
+            Vendedor: {{usuario}}
+        </div>
+
+    </div>
+
+
+    <!-- ========================= -->
+    <!-- CLIENTE -->
+    <!-- ========================= -->
+
+    <div class="seccion cliente">
+
+        <div>
+            NIT/C.C: {{documento_cliente}}
+        </div>
+
+        <div>
+            Cliente: {{cliente}}
+        </div>
+
+        <div>
+            Telefono: {{telefono_cliente}}
+        </div>
+
+        <div>
+            Email: {{email_cliente}}
+        </div>
+
+    </div>
+
+
+    <!-- ========================= -->
+    <!-- PRODUCTOS -->
+    <!-- ========================= -->
+
+    <table class="productos">
+
+        <thead>
+            <tr>
+                <th class="codigo">
+                    Código
+                </th>
+
+                <th class="producto">
+                    Producto
+                </th>
+
+                <th class="cantidad">
+                    Can
+                </th>
+
+                <th class="valor">
+                    Valor Unit.
+                </th>
+
+                <th class="valor">
+                    Valor Total
+                </th>
+            </tr>
+        </thead>
+
+        <tbody>
+
+            {{#each productos}}
+
+            <tr>
+
+                <td>
+                    {{codigo}}
+                </td>
+
+                <td>
+                    {{descripcion}}
+                </td>
+
+                <td>
+                    {{cantidad}}
+                </td>
+
+                <td>
+                    $ {{valorUnitario}}
+                </td>
+
+                <td>
+                    $ {{precioTotal}}
+                </td>
+
+            </tr>
+
+            {{/each}}
+
+        </tbody>
+
+    </table>
+
+
+    <!-- ========================= -->
+    <!-- RESUMEN -->
+    <!-- ========================= -->
+
+    <div class="resumen">
+
+        <div class="fila">
+
+            <span>
+                USTED COMPRO
+            </span>
+
+            <span>
+                {{total_productos}}
+            </span>
+
+            <span>
+                ARTICULOS
+            </span>
+
+        </div>
+
+
+        <div class="fila">
+
+            <span>
+                SUBTOTAL
+            </span>
+
+            <span>
+                $ {{subtotal}}
+            </span>
+
+        </div>
+
+
+        {{#if descuento}}
+
+        <div class="fila">
+
+            <span>
+                DESCUENTO
+            </span>
+
+            <span>
+                $ {{subtotal}}
+            </span>
+
+            <span>
+                {{descuento}} %
+            </span>
+
+        </div>
+
+        {{/if}}
+
+
+        <div class="fila">
+
+            <span>
+                IVA
+            </span>
+
+            <span>
+                $ {{impuesto}}
+            </span>
+
+        </div>
+
+
+        <div class="fila total">
+
+            <span>
+                TOTAL
+            </span>
+
+            <span>
+                $ {{total}}
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================= -->
+    <!-- MÉTODOS DE PAGO -->
+    <!-- ========================= -->
+
+    <div class="metodos-titulo">
+        METODOS DE PAGO
+    </div>
+
+    {{#each metodosPago}}
+
+    <div class="fila pago">
+
+        <span>
+            {{metodo_pago}}
+        </span>
+
+        <span>
+            $ {{valor}}
+        </span>
+
+    </div>
+
+    {{/each}}
+
+
+    <!-- ========================= -->
+    <!-- RESOLUCIÓN -->
+    <!-- ========================= -->
+
+    <div class="footer">
+
+        <div class="devoluciones">
+
+            PARA TODA DEVOLUCION O CAMBIO, CONSERVE SU
+            FACTURA, ESTA SERA VALIDA POR (30) TREINTA DIAS
+            Y SU REPOSICION SOLO SERA EN PRODUCTOS,
+            MAS NO EN EFECTIVO
+
+        </div>
+
+        <div class="resolucion">
+            {{msgResolucion}}
+        </div>
+
+        <div class="vigencia">
+            VIGENCIA 00 MESES
+        </div>
+
+    </div>
+
+</body>
+
+</html>

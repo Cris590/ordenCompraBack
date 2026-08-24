@@ -1,5 +1,5 @@
 import axios from "axios";
-import { INuevaECategoria, INuevoEProducto, IRespuestaCreacionECategoria, IRespuestaCreacionEProducto} from "../../interfaces/api/ecommerce";
+import { INuevaECategoria, IRespuestaCreacionECategoria, IRespuestaCreacionEProducto} from "../../interfaces/api/ecommerce";
 import { logIntegracionesEcommerce } from "../../helpers/logger";
 const WOOCOMERCE_URL = process.env.WOOCOMERCE_URL
 
@@ -11,39 +11,96 @@ const api = axios.create({
     }
 });
 
-export const crearCategoriaWoo = async (categoria: INuevaECategoria): Promise<IRespuestaCreacionECategoria> => {
-    const { data } = await api.post<IRespuestaCreacionECategoria>(
-        "/products/categories",
-        categoria
-    );
 
-    const log = {
-        url:`${WOOCOMERCE_URL}/products/categories`,
-        type:'post',
-        request:categoria,
-        response:data
+export const crearCategoriaWoo = async (
+    categoria: INuevaECategoria
+): Promise<IRespuestaCreacionECategoria> => {
+
+    const url = `${WOOCOMERCE_URL}/products/categories`;
+
+    try {
+
+        const { data } = await api.post<IRespuestaCreacionECategoria>(
+            "/products/categories",
+            categoria
+        );
+
+        const log = {
+            url,
+            type: "post",
+            request: categoria,
+            response: data
+        };
+
+        logIntegracionesEcommerce.info(
+            JSON.stringify(log)
+        );
+
+        return data;
+
+    } catch (e: any) {
+
+        const log = {
+            url,
+            type: "post",
+            request: categoria,
+            response: e.response?.data ?? null,
+            status: e.response?.status ?? null,
+            error: e.message
+        };
+
+        logIntegracionesEcommerce.error(
+            JSON.stringify(log)
+        );
+
+        throw e;
     }
-    logIntegracionesEcommerce.info(JSON.stringify(log))
-    return data;
 };
+
 
 export const actualizarCategoriaWoo = async (
     idCategoria: number,
     categoria: Partial<INuevaECategoria>
 ): Promise<IRespuestaCreacionECategoria> => {
-    const { data } = await api.put<IRespuestaCreacionECategoria>(
-        `/products/categories/${idCategoria}`,
-        categoria
-    );
 
-    const log = {
-        url: `${WOOCOMERCE_URL}/products/categories/${idCategoria}`,
-        type: "put",
-        request: categoria,
-        response: data
-    };
+    const url =
+        `${WOOCOMERCE_URL}/products/categories/${idCategoria}`;
 
-    logIntegracionesEcommerce.info(JSON.stringify(log));
+    try {
 
-    return data;
+        const { data } = await api.put<IRespuestaCreacionECategoria>(
+            `/products/categories/${idCategoria}`,
+            categoria
+        );
+
+        const log = {
+            url,
+            type: "put",
+            request: categoria,
+            response: data
+        };
+
+        logIntegracionesEcommerce.info(
+            JSON.stringify(log)
+        );
+
+        return data;
+
+    } catch (e: any) {
+
+        const log = {
+            url,
+            type: "put",
+            request: categoria,
+            response: e.response?.data ?? null,
+            status: e.response?.status ?? null,
+            error: e.message
+        };
+
+        logIntegracionesEcommerce.error(
+            JSON.stringify(log)
+        );
+
+        throw e;
+    }
 };

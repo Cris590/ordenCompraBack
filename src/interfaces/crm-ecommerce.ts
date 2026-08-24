@@ -39,8 +39,11 @@ export interface ICrearProductoColorCrm{
 export interface IActualizarProductoCrm{
        precio_compra?:number,
        precio_venta?:number,
-       cod_tallaje?:number
+       cod_tallaje?:number,
+        id_woo_producto?:number,
+       id_woo_variante_producto?:number
 }
+
 
 export interface IActualizarProductoColorCrm{
        codigo_color:string,
@@ -60,7 +63,8 @@ export interface IEditarProductoModelo {
   colores: string[];
   tallas: string[];
   cod_tallaje: number;
-  nuevo_producto?:boolean
+  nuevo_producto?:boolean;
+  sincronizar_ecommerce?:boolean
 }
 
 export interface IProductoNuevoCrm {
