@@ -76,12 +76,15 @@ export const obtenerTiendasPosUsuario = async (req: any, res: Response) => {
         const codUsuario = req.auth.user.cod_usuario;
         const infoVendedor = await generalService.getTableInformation('vendedor', 'cod_usuario', codUsuario)
         let idTiendaObligatorio = 0
+        let ultimaCompra;
         if (infoVendedor.length > 0) {
             idTiendaObligatorio = infoVendedor[0].id_bodega
+           
         }
 
 
         const bodegas = await posDao.obtenerTiendasPosUsuario()
+        
         res.send({
             error: 0,
             bodegas,
@@ -152,9 +155,12 @@ export const obtenerVendedoresPorTienda = async (req: any, res: Response) => {
     try {
         const codUsuario = req.auth.user.cod_usuario;
         const vendedores = await posDao.obtenerVendedoresPorTienda(codUsuario)
+        const ultimaCompra = await posDao.obtenerUltimaCompra(vendedores[0].id_bodega)
+  
         res.send({
             error: 0,
             vendedores: vendedores,
+            codigoNuevo:ultimaCompra ? +ultimaCompra.codigo + 1 : 0
         })
 
     } catch (e: any) {
@@ -221,10 +227,10 @@ export const crearVentaPos = async (req: any, res: Response) => {
         }
         const idTienda = infoVendedor[0].id_bodega
         const ventaReq = req.body
-        const ultimaCompra = await generalService.getTableInformationCrm('ventas','id_tienda',idTienda)
+        const ultimaCompra = await posDao.obtenerUltimaCompra(idTienda)
 
         let venta ={
-            codigo: +ultimaCompra[0].codigo + 1,
+            codigo: +ultimaCompra.codigo + 1,
             id_cliente:ventaReq.clienteId,
             id_vendedor:ventaReq.vendedorId,
             id_tienda:idTienda,

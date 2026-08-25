@@ -352,3 +352,12 @@ export const obtenerInventarioPorCodigo = (codigo: string, idTienda:number) => {
         .andWhere('i.id_tienda',idTienda)
         .first()
 }
+
+export const obtenerUltimaCompra = (idTienda:number) => {
+    return dbCrm
+        .select('codigo')
+        .from('ventas as v')
+        .andWhere('v.id_tienda',idTienda)
+        .orderBy('id','desc')
+        .first()
+}
