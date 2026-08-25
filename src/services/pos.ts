@@ -4,7 +4,7 @@ import * as productoDao from '../databases/producto'
 
 import * as generalService from '../services/general'
 import { RequestToken } from '../interfaces/express';
-import { IFiltrosVentasPOS, IProductoVentaPOS, ITrasladoProductos } from '../interfaces/pos';
+import { IFiltrosVentasPOS, IFiltroTrasladosProductos, IProductoVentaPOS, ITrasladoProductos } from '../interfaces/pos';
 import { generateRandomNumber } from '../helpers/general';
 import { generatePdfTicket } from '../helpers/createDocumentPdf';
 import path from 'path';
@@ -76,13 +76,10 @@ export const obtenerTiendasPosUsuario = async (req: any, res: Response) => {
         const codUsuario = req.auth.user.cod_usuario;
         const infoVendedor = await generalService.getTableInformation('vendedor', 'cod_usuario', codUsuario)
         let idTiendaObligatorio = 0
-        let ultimaCompra;
         if (infoVendedor.length > 0) {
             idTiendaObligatorio = infoVendedor[0].id_bodega
            
         }
-
-
         const bodegas = await posDao.obtenerTiendasPosUsuario()
         
         res.send({
@@ -1077,7 +1074,8 @@ export const transferirProductosEntreBodegas = async (req: any, res: Response) =
                 id_usuario: codUsuario,
                 stock:producto.cantidadTransferir,
                 id_bodega_salida:transferencia.bodegaSalida,
-                id_bodega_entrada:transferencia.bodegaEntrada
+                id_bodega_entrada:transferencia.bodegaEntrada,
+                id_cod_producto:producto.id
             }
 
             await posDao.crearLogTrasladoPos(logTraslado)
@@ -1092,6 +1090,52 @@ export const transferirProductosEntreBodegas = async (req: any, res: Response) =
                 icon: 'success',
                 text: 'Transferencia creada correctamente.'
             }
+        })
+
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al obtener productos'
+            }
+        })
+    }
+
+}
+
+
+export const obtenerHistorialTraslados = async (req: any, res: Response) => {
+    try {
+        let filtros = req.body as IFiltroTrasladosProductos 
+        let traslados = await posDao.mostrarLogTransferencia(filtros)
+        
+        let trasladosTratados = []
+        for (const traslado of traslados) {
+            if(!traslado.usuario){
+                console.log('--- Vamos a validar el usuario ---')
+                const usuarioCrm = await generalService.getTableInformation('usuario','cod_usuario',traslado.id_usuario)
+                console.log('--- Vamos a validar el usuario ---')
+                if(usuarioCrm.length > 0 ){
+                    trasladosTratados.push({
+                        ...traslado,
+                        usuario:usuarioCrm[0].nombre
+                    })
+                }else{
+                    trasladosTratados.push(traslado)    
+                }
+            }else{
+                trasladosTratados.push(traslado)
+            }
+        }
+
+
+
+        res.send({
+            error: 0,
+           traslados:trasladosTratados
         })
 
     } catch (e: any) {

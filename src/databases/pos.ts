@@ -3,7 +3,7 @@ import Knex from 'knex';
 import config from '../../knexfile';
 import { logCrm, logDatabasePYS } from '../helpers/logger';
 import * as formatMessages from '../helpers/formatLogMessages';
-import { IFiltrosVentasPOS } from '../interfaces/pos';
+import { IFiltrosVentasPOS, IFiltroTrasladosProductos } from '../interfaces/pos';
 
 const db = Knex(config.development);
 const dbCrm = Knex(config.crmbrt);
@@ -365,4 +365,67 @@ export const obtenerUltimaCompra = (idTienda:number) => {
 
 export const crearLogTrasladoPos = async (log: any) => {
     return dbCrm('log_traslados').insert(log);
+}
+
+export const mostrarLogTransferencia = async (filtros: IFiltroTrasladosProductos) => {
+    const query = dbCrm("log_traslados as lg")
+        .select(
+            "lg.id_log",
+            'lg.id_usuario',
+            "u.nombre as usuario",
+            "p.descripcion as producto",
+            "p.codigo",
+            "lg.stock",
+            "b1.nombre as bodega_entrada",
+            "b2.nombre as bodega_salida",
+            "lg.fecha"
+        )
+        .join("productos as p", "p.id", "lg.id_cod_producto")
+        .leftJoin("usuarios as u", "u.id", "lg.id_usuario")
+        .join("bodegas as b1", "b1.id", "lg.id_bodega_entrada")
+        .join("bodegas as b2", "b2.id", "lg.id_bodega_salida");
+
+    // Fecha inicial
+    if (filtros.fecha_inicial) {
+        query.where(
+            "lg.fecha",
+            ">=",
+            `${filtros.fecha_inicial} 00:00:00`
+        );
+    }
+
+    // Fecha final
+    if (filtros.fecha_final) {
+        query.where(
+            "lg.fecha",
+            "<=",
+            `${filtros.fecha_final} 23:59:59`
+        );
+    }
+
+    // Bodega salida
+    if (filtros.id_bodega_salida?.length) {
+        query.whereIn(
+            "lg.id_bodega_salida",
+            filtros.id_bodega_salida
+        );
+    }
+
+    // Bodega entrada
+    if (filtros.id_bodega_entrada?.length) {
+        query.whereIn(
+            "lg.id_bodega_entrada",
+            filtros.id_bodega_entrada
+        );
+    }
+
+    // Código de producto
+    if (filtros.codigo_producto?.trim()) {
+        query.where(
+            "p.codigo",
+            filtros.codigo_producto.trim()
+        );
+    }
+
+    return await query.orderBy("lg.id_log", "desc");
 }

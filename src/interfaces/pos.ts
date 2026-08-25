@@ -55,3 +55,11 @@ export interface IProductoTraslado {
     cantidadDisponible: number;
     cantidadTransferir: number;
 }
+
+export interface IFiltroTrasladosProductos {
+    fecha_inicial: string;
+    fecha_final: string;
+    id_bodega_salida: number[];
+    id_bodega_entrada: number[];
+    codigo_producto: string;
+}
