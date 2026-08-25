@@ -138,7 +138,7 @@ export const generatePdfTicket = async (
     try {
 
         const options: any = {
-            width: "88mm",
+            width: "78mm",
             printBackground: true,
             path: pdfPath,
             margin: {
