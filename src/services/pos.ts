@@ -206,7 +206,7 @@ export const obtenerInfoProductoVenta = async (req: any, res: Response) => {
 
 }
 
-export const crearVentaCrm = async (req: any, res: Response) => {
+export const crearVentaPos = async (req: any, res: Response) => {
     try {
         const codUsuario = req.auth.user.cod_usuario;
         const infoVendedor = await generalService.getTableInformation('vendedor', 'cod_usuario', codUsuario)
@@ -239,10 +239,10 @@ export const crearVentaCrm = async (req: any, res: Response) => {
             fc:0
         }
         
-        const nuevaVenta = await posDao.crearVentaCrm(venta)
+        const nuevaVenta = await posDao.crearVentaPos(venta)
 
-        /**Actualizar inventario */
-        if(nuevaVenta[0]){
+        /**Actualizar inventario e información del cliente */
+        if(nuevaVenta[0] && ventaReq.deuda == 0){
             for (const producto of ventaReq.productos) {
                 await posDao.editarStockCrm(producto.id, idTienda, producto.stock)
 
@@ -256,14 +256,14 @@ export const crearVentaCrm = async (req: any, res: Response) => {
                 }
                 await posDao.crearLogVentaCrm(logVenta)
             }
+        
+            /** Actualizar compras del cliente */
+            const cliente = await generalService.getTableInformationCrm('clientes','id',ventaReq.clienteId)
+            await posDao.actualizarInfoClienteCrm(ventaReq.clienteId, { 
+                compras:+cliente[0].compras + 1,
+                ultima_compra:new Date()
+            })
         }
-        /** Actualizar compras del cliente */
-        const cliente = await generalService.getTableInformationCrm('clientes','id',ventaReq.clienteId)
-        await posDao.actualizarInfoClienteCrm(ventaReq.clienteId, { 
-            compras:+cliente[0].compras + 1,
-            ultima_compra:new Date()
-        })
-
 
         res.send({
             error: 0,
@@ -288,8 +288,93 @@ export const crearVentaCrm = async (req: any, res: Response) => {
 
 }
 
+export const editarVentaPos = async (req: any, res: Response) => {
+    try {
+        
+        const codUsuario = req.auth.user.cod_usuario;
+        const idVenta = req.params.id_venta
 
-export const obtenerVentasCrm = async (req: any, res: Response) => {
+        const infoVendedor = await generalService.getTableInformation('vendedor', 'cod_usuario', codUsuario)
+        if (infoVendedor.length == 0) {
+            return res.send({
+                error: 1,
+                msg: {
+                    icon: 'error',
+                    text: 'El usuario no tiene permisos para crear una venta'
+                }
+            })
+        }
+        const idTienda = infoVendedor[0].id_bodega
+        const ventaReq = req.body
+        const ultimaCompra = await generalService.getTableInformationCrm('ventas','id_tienda',idTienda)
+
+        let venta ={
+            codigo: +ultimaCompra[0].codigo + 1,
+            id_cliente:ventaReq.clienteId,
+            id_vendedor:ventaReq.vendedorId,
+            id_tienda:idTienda,
+            productos:JSON.stringify(ventaReq.productos),
+            impuesto:ventaReq.impuesto,
+            neto:ventaReq.neto,
+            total:ventaReq.total,
+            costos:ventaReq.costos,
+            descuento:ventaReq.descuento,
+            metodo_pago:JSON.stringify(ventaReq.pagos),
+            deuda:ventaReq.deuda,
+            fc:0
+        }
+        
+        const nuevaVenta = await posDao.editarVentaPos(idVenta, venta)
+
+        /**Actualizar inventario e información del cliente */
+        if(ventaReq.deuda == 0){
+            for (const producto of ventaReq.productos) {
+                await posDao.editarStockCrm(producto.id, idTienda, producto.stock)
+
+                // TODO: Actualizar inventario en el ecommerce 
+                /** Crear log venta */
+                const logVenta = {
+                    id_venta:idVenta,
+                    id_producto:producto.id,
+                    id_tienda:idTienda,
+                    cantidad:producto.cantidad
+                }
+                await posDao.crearLogVentaCrm(logVenta)
+            }
+        
+            /** Actualizar compras del cliente */
+            const cliente = await generalService.getTableInformationCrm('clientes','id',ventaReq.clienteId)
+            await posDao.actualizarInfoClienteCrm(ventaReq.clienteId, { 
+                compras:+cliente[0].compras + 1,
+                ultima_compra:new Date()
+            })
+        }
+
+        res.send({
+            error: 0,
+            ventaId:idVenta,
+            msg: {
+                icon: 'success',
+                text: 'Venta creada correctamente.'
+            }
+        })
+
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al actualizar la venta'
+            }
+        })
+    }
+
+}
+
+
+export const obtenerVentasPos = async (req: any, res: Response) => {
     try {
         const codUsuario = req.auth.user.cod_usuario;
         const codPerfil = req.auth.user.cod_perfil;
@@ -326,6 +411,62 @@ export const obtenerVentasCrm = async (req: any, res: Response) => {
         }
         
         const ventas = await posDao.obtenerVentasPOS(filtros)
+
+        res.send({
+            error: 0,
+            ventas
+        })
+
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al obtener productos'
+            }
+        })
+    }
+
+}
+
+export const obtenerVentasRetomarCrm = async (req: any, res: Response) => {
+    try {
+        const codUsuario = req.auth.user.cod_usuario;
+        const codPerfil = req.auth.user.cod_perfil;
+        const filtros = req.body as IFiltrosVentasPOS
+        
+        const perfilesValidosRes = await generalService.getTableInformation('variable', 'nombre', 'PERFILES_BUSQUEDA_VENTAS_POS');
+        const perfilesValidos = JSON.parse(perfilesValidosRes[0].valor)
+
+        if(!perfilesValidos.includes(+codPerfil)){
+            return res.send({
+                    error: 1,
+                    msg: {
+                        icon: 'error',
+                        text: 'El usuario no tiene permisos para crear una venta'
+                    }
+                })
+        }
+
+        // Si es vendedor validar su existencia, configuracion y su perfil
+        if(codPerfil == 8){
+            const infoVendedor = await generalService.getTableInformation('vendedor', 'cod_usuario', codUsuario)
+            if (infoVendedor.length == 0) {
+                return res.send({
+                    error: 1,
+                    msg: {
+                        icon: 'error',
+                        text: 'El usuario no tiene permisos ver las ventas'
+                    }
+                })
+            }else{
+                filtros.id_tienda = infoVendedor[0].id_bodega
+            }
+        }
+        
+        const ventas = await posDao.obtenerVentasPendientesPOS(filtros)
 
         res.send({
             error: 0,
@@ -729,3 +870,209 @@ export const crearClienteCrm = async (req: any, res: Response) => {
 
 }
 
+
+/**
+ *  
+ * 
+    export interface Cliente {
+        id: number;
+        documento: string;
+        nombre: string;
+        dv?: number
+    }
+
+  
+    export interface IVendedorCrmTienda {
+        cod_vendedor: number;
+        cod_usuario: number;
+        id_usuario_crm: number;
+        id_bodega: number;
+        nombre: string;
+        cedula: string;
+    }
+
+    export interface MedioPago {
+        id_metodo_pago: number;
+        nombre: string;
+        valor: number;
+    }
+
+    {
+       descuento:number,
+        productos:ProductoVenta[],
+        cliente:Cliente,
+        vendedor:IVendedorCrmTienda,
+        mediosPago:MedioPago[]
+    }
+
+      export interface Producto {
+        id: number;
+        codigo: string;
+        nombre: string;
+        precio: number;
+        stock: number;
+        costo:number
+    }
+
+    export interface ProductoVenta extends Producto {
+      cantidad: number;
+    }
+
+ */
+export const obtenerVentaParaRemotar = async (req: any, res: Response) => {
+    try {
+        const idVenta = req.params.id_venta;
+        
+        const ventaInfo = await generalService.getTableInformationCrm('ventas','id',idVenta)
+        if(ventaInfo.length == 0){
+            return res.send({
+                error: 1,
+                msg: {
+                    icon: 'error',
+                    text: 'No existe venta con estos parametros'
+                }
+            })
+        }
+
+        const venta = ventaInfo[0]
+
+        const descuento = venta.descuento
+   
+        let productosModificados:any[] = []
+        for (const producto of JSON.parse(venta.productos)) {
+            const productoDetalle = await  generalService.getTableInformationCrm('productos','id',producto.id)
+            const inventarioProducto = await  posDao.obtenerProductoPorCodigoVenta(productoDetalle[0].codigo, venta.id_tienda)
+            productosModificados.push({
+                id:producto.id,
+                codigo:productoDetalle[0].codigo,
+                nombre:productoDetalle[0].descripcion,
+                precio: producto.precio,
+                stock: inventarioProducto[0].stock,
+                costo: productoDetalle[0].precio_compra,
+                cantidad: producto.cantidad,
+            })
+        }
+
+
+        if (venta.metodo_pago) {        
+            try {
+                venta.metodo_pago = JSON.parse(venta.metodo_pago);
+            } catch (error) {
+                venta.metodo_pago = [];
+            }
+        } else {
+            venta.metodo_pago = [];
+        }
+
+        let metodosPagoModificado:any[] = []
+        for (const metodoPago of venta.metodo_pago) {
+            const detalleMetodoPago = await generalService.getTableInformationCrm('metodos_pago','valor',metodoPago.metodo_pago)
+            if(detalleMetodoPago.length > 0){
+                metodosPagoModificado.push({
+                    id_metodo_pago: detalleMetodoPago[0].id,
+                    nombre: detalleMetodoPago[0].valor,
+                    valor: metodoPago.valor
+                })
+            }
+        }
+
+        const clienteInfo = await generalService.getTableInformationCrm('clientes','id',venta.id_cliente)
+        const clienteModificado = {
+            id: clienteInfo[0].id,
+            documento: clienteInfo[0].documento,
+            nombre: clienteInfo[0].nombre,
+            dv: clienteInfo[0].dv
+        }
+        
+        const vendedor = await posDao.obtenerVendedoresVenta(venta.id_vendedor)
+
+        
+        res.send({
+            error: 0,
+            descuento,
+            productos:productosModificados,
+            cliente:clienteModificado,
+            vendedor,
+            mediosPago:metodosPagoModificado
+        })
+
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al obtener venta a retomar'
+            }
+        })
+    }
+
+}
+
+export const obtenerInventariosPos = async (req: any, res: Response) => {
+    try {
+        const codUsuario = req.auth.user.cod_usuario;
+        const codPerfil = req.auth.user.cod_perfil;
+        const filtros = req.body as {id_tienda:number[]}
+        
+        // Si es vendedor validar su existencia, configuracion y su perfil
+        if(codPerfil == 8){
+            const infoVendedor = await generalService.getTableInformation('vendedor', 'cod_usuario', codUsuario)
+            if (infoVendedor.length == 0) {
+                return res.send({
+                    error: 1,
+                    msg: {
+                        icon: 'error',
+                        text: 'El usuario no tiene permisos ver las ventas'
+                    }
+                })
+            }else{
+                filtros.id_tienda = [infoVendedor[0].id_bodega]
+            }
+        }
+        
+        const inventarios = await posDao.obtenerInventariosPos(filtros)
+
+        res.send({
+            error: 0,
+            inventarios
+        })
+
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al obtener productos'
+            }
+        })
+    }
+
+}
+
+export const obtenerInventarioPorCodigo = async (req: any, res: Response) => {
+    try {
+        const codigo = req.params.codigo;
+        const idTienda = req.params.id_tienda;
+        const producto = await posDao.obtenerInventarioPorCodigo(codigo, idTienda)
+        res.send({
+            error: 0,
+            producto
+        })
+
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al obtener venta a retomar'
+            }
+        })
+    }
+
+}
