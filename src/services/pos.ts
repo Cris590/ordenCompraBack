@@ -4,7 +4,7 @@ import * as productoDao from '../databases/producto'
 
 import * as generalService from '../services/general'
 import { RequestToken } from '../interfaces/express';
-import { IFiltrosVentasPOS, IProductoVentaPOS } from '../interfaces/pos';
+import { IFiltrosVentasPOS, IProductoVentaPOS, ITrasladoProductos } from '../interfaces/pos';
 import { generateRandomNumber } from '../helpers/general';
 import { generatePdfTicket } from '../helpers/createDocumentPdf';
 import path from 'path';
@@ -250,7 +250,7 @@ export const crearVentaPos = async (req: any, res: Response) => {
         /**Actualizar inventario e información del cliente */
         if(nuevaVenta[0] && ventaReq.deuda == 0){
             for (const producto of ventaReq.productos) {
-                await posDao.editarStockCrm(producto.id, idTienda, producto.stock)
+                await posDao.editarStockPos(producto.id, idTienda, producto.stock)
 
                 // TODO: Actualizar inventario en el ecommerce 
                 /** Crear log venta */
@@ -335,7 +335,7 @@ export const editarVentaPos = async (req: any, res: Response) => {
         /**Actualizar inventario e información del cliente */
         if(ventaReq.deuda == 0){
             for (const producto of ventaReq.productos) {
-                await posDao.editarStockCrm(producto.id, idTienda, producto.stock)
+                await posDao.editarStockPos(producto.id, idTienda, producto.stock)
 
                 // TODO: Actualizar inventario en el ecommerce 
                 /** Crear log venta */
@@ -1051,6 +1051,55 @@ export const busquedaInventarioCodigo = async (req: any, res: Response) => {
             msg: {
                 icon: 'error',
                 text: 'Error al obtener el inventario.'
+            }
+        })
+    }
+
+}
+
+export const transferirProductosEntreBodegas = async (req: any, res: Response) => {
+    try {
+        
+        const codUsuario = req.auth.user.cod_usuario;
+        const transferencia = req.body as ITrasladoProductos
+        
+        for (const producto of transferencia.productos) {
+
+            const stockBodegaSalida = producto.cantidadDisponible - producto.cantidadTransferir 
+            await posDao.editarStockPos(producto.id,transferencia.bodegaSalida,stockBodegaSalida)
+
+            const stockActualBodegaEntrada = await posDao.obtenerInventarioPorCodigo(producto.codigo, transferencia.bodegaEntrada)
+            await posDao.editarStockPos(producto.id,transferencia.bodegaEntrada,stockActualBodegaEntrada.cantidadDisponible + producto.cantidadTransferir)
+        
+            const logTraslado = {
+                id_usuario: codUsuario,
+                stock:producto.cantidadTransferir,
+                id_bodega_salida:transferencia.bodegaSalida,
+                id_bodega_entrada:transferencia.bodegaEntrada
+            }
+
+            await posDao.crearLogTrasladoPos(logTraslado)
+        }
+
+
+       
+
+        res.send({
+            error: 0,
+            msg: {
+                icon: 'success',
+                text: 'Transferencia creada correctamente.'
+            }
+        })
+
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al obtener productos'
             }
         })
     }

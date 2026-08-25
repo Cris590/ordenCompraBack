@@ -41,3 +41,17 @@ export interface IProductoVentaPOS {
     precio: string;
     total: string;
 }
+
+export interface ITrasladoProductos {
+    bodegaSalida: number;
+    bodegaEntrada: number;
+    productos: IProductoTraslado[];
+}
+
+export interface IProductoTraslado {
+    id: number;
+    codigo: string;
+    descripcion: string;
+    cantidadDisponible: number;
+    cantidadTransferir: number;
+}

@@ -243,7 +243,7 @@ export const editarVentaPos = async (idVenta: number, venta: any) => {
         .update(venta)
 }
 
-export const editarStockCrm = async (idProducto: number, idTienda: number, stock: number) => {
+export const editarStockPos = async (idProducto: number, idTienda: number, stock: number) => {
     return await dbCrm('inventarios')
         .where('id_cod_producto', idProducto)
         .andWhere('id_tienda', idTienda)
@@ -337,16 +337,8 @@ export const obtenerInventariosPos = async (filtros: {id_tienda: number[];codigo
         .orderBy('i.stock', 'desc')
         .orderBy('p.fecha', 'desc');
 };
-/**
- * 
- * export interface IProductoTraslado {
-    id: number | null;
-    codigo: string;
-    descripcion: string;
-    cantidadDisponible: number;
-}
 
- */
+
 export const obtenerInventarioPorCodigo = (codigo: string, idTienda:number) => {
     return dbCrm
         .select(
@@ -369,4 +361,8 @@ export const obtenerUltimaCompra = (idTienda:number) => {
         .andWhere('v.id_tienda',idTienda)
         .orderBy('id','desc')
         .first()
+}
+
+export const crearLogTrasladoPos = async (log: any) => {
+    return dbCrm('log_traslados').insert(log);
 }
