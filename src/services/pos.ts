@@ -856,7 +856,7 @@ export const crearClienteCrm = async (req: any, res: Response) => {
             error: 0,
             msg:{
                 icon:'success',
-                text:'Cliente actualizado correctamente'
+                text:'Cliente creado correctamente'
             },
             idCliente:cliente[0],
             documento:req.body.documento
@@ -876,55 +876,6 @@ export const crearClienteCrm = async (req: any, res: Response) => {
 
 }
 
-
-/**
- *  
- * 
-    export interface Cliente {
-        id: number;
-        documento: string;
-        nombre: string;
-        dv?: number
-    }
-
-  
-    export interface IVendedorCrmTienda {
-        cod_vendedor: number;
-        cod_usuario: number;
-        id_usuario_crm: number;
-        id_bodega: number;
-        nombre: string;
-        cedula: string;
-    }
-
-    export interface MedioPago {
-        id_metodo_pago: number;
-        nombre: string;
-        valor: number;
-    }
-
-    {
-       descuento:number,
-        productos:ProductoVenta[],
-        cliente:Cliente,
-        vendedor:IVendedorCrmTienda,
-        mediosPago:MedioPago[]
-    }
-
-      export interface Producto {
-        id: number;
-        codigo: string;
-        nombre: string;
-        precio: number;
-        stock: number;
-        costo:number
-    }
-
-    export interface ProductoVenta extends Producto {
-      cantidad: number;
-    }
-
- */
 export const obtenerVentaParaRemotar = async (req: any, res: Response) => {
     try {
         const idVenta = req.params.id_venta;
@@ -1076,7 +1027,30 @@ export const obtenerInventarioPorCodigo = async (req: any, res: Response) => {
             error: 1,
             msg: {
                 icon: 'error',
-                text: 'Error al obtener venta a retomar'
+                text: 'Error al obtener inventario'
+            }
+        })
+    }
+
+}
+
+export const busquedaInventarioCodigo = async (req: any, res: Response) => {
+    try {
+        const codigo = req.params.codigo;
+        const inventarios = await posDao.obtenerInventariosPos({codigo, id_tienda:[]}, true)
+        res.send({
+            error: 0,
+            inventarios
+        })
+
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al obtener el inventario.'
             }
         })
     }

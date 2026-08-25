@@ -31,6 +31,7 @@ router.get('/obtener_venta_retomar/:id_venta', posService.obtenerVentaParaRemota
 router.post('/obtener_inventario_pos/', posService.obtenerInventariosPos);
 
 router.get('/inventario_codigo/:codigo/:id_tienda', posService.obtenerInventarioPorCodigo);
+router.get('/busqueda_inventario_codigo/:codigo', posService.busquedaInventarioCodigo);
 
 
 

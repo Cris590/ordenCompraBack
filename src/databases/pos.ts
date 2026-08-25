@@ -306,9 +306,9 @@ export const obtenerClientesCrm = async (id_tienda?: number) => {
     return query;
 };
 
-export const obtenerInventariosPos = async (filtros: { id_tienda: number[] }) => {
+export const obtenerInventariosPos = async (filtros: {id_tienda: number[];codigo?: string;},validarSinFiltro = false) => {
 
-    return dbCrm
+    const query = dbCrm
         .select(
             'p.id',
             'p.codigo',
@@ -323,8 +323,17 @@ export const obtenerInventariosPos = async (filtros: { id_tienda: number[] }) =>
         .join('productos as p', 'p.id', 'i.id_cod_producto')
         .join('bodegas as b', 'i.id_tienda', 'b.id')
         .join('categorias as c', 'p.id_categoria', 'c.id')
-        .join('sub_categorias as sc', 'p.id_sub_categoria', 'sc.id')
-        .whereIn('i.id_tienda', filtros.id_tienda)
+        .join('sub_categorias as sc', 'p.id_sub_categoria', 'sc.id');
+
+    if (!validarSinFiltro) {
+        query.whereIn('i.id_tienda', filtros.id_tienda);
+    }
+
+    if (filtros.codigo) {
+        query.where('p.codigo', filtros.codigo);
+    }
+
+    return query
         .orderBy('i.stock', 'desc')
         .orderBy('p.fecha', 'desc');
 };
