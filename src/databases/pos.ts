@@ -100,6 +100,7 @@ export const obtenerVentasPOS = async (filtros: IFiltrosVentasPOS) => {
         .join('usuarios as u', 'v.id_vendedor', 'u.id')
         .join('bodegas as b', 'v.id_tienda', 'b.id')
         .where('v.deuda', '<=', 0)
+        .andWhere('v.factura_valida',1)
         .modify((query) => {
 
             // Si la tienda es "Todas", no se aplica este filtro
@@ -354,6 +355,15 @@ export const obtenerInventarioPorCodigo = (codigo: string, idTienda:number) => {
         .first()
 }
 
+export const obtenerInventarioPorId= (idProducto: number, idTienda:number) => {
+    return dbCrm
+        .select('i.stock',)
+        .from('inventarios as i')
+        .where('i.id_cod_producto', idProducto)
+        .andWhere('i.id_tienda',idTienda)
+        .first()
+}
+
 export const obtenerUltimaCompra = (idTienda:number) => {
     return dbCrm
         .select('codigo')
@@ -428,4 +438,15 @@ export const mostrarLogTransferencia = async (filtros: IFiltroTrasladosProductos
     }
 
     return await query.orderBy("lg.id_log", "desc");
+}
+
+export const obtenerUltimaCompraDeClientePos = (idCliente:number, idVenta:number) => {
+    return dbCrm
+        .select('v.*')
+        .from('ventas as v')
+        .andWhere('v.id_cliente',idCliente)
+        .andWhere('v.id','!=',idVenta)
+        .andWhere('v.factura_valida',1)
+        .orderBy('id','desc')
+        .first()
 }

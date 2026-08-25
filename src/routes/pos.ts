@@ -22,6 +22,7 @@ router.put('/editar_venta/:id_venta', posService.editarVentaPos);
 
 router.get('/obtener_venta_detalle/:id_venta', posService.obtenerVentaDetalle);
 router.get('/generar_factura_pdf/:id_venta', posService.generarFactura);
+router.get('/cancelar_factura_pos/:id_venta', posService.cancelarFacturaPos);
 
 router.get('/obtener_tipos_documento/', posService.obtenerTiposDocumento);
 router.get('/obtener_clientes/', posService.obtenerClientesPos);

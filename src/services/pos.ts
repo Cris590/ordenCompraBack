@@ -78,10 +78,10 @@ export const obtenerTiendasPosUsuario = async (req: any, res: Response) => {
         let idTiendaObligatorio = 0
         if (infoVendedor.length > 0) {
             idTiendaObligatorio = infoVendedor[0].id_bodega
-           
+
         }
         const bodegas = await posDao.obtenerTiendasPosUsuario()
-        
+
         res.send({
             error: 0,
             bodegas,
@@ -153,13 +153,13 @@ export const obtenerVendedoresPorTienda = async (req: any, res: Response) => {
         const codUsuario = req.auth.user.cod_usuario;
         const vendedores = await posDao.obtenerVendedoresPorTienda(codUsuario)
         const ultimaCompra = await posDao.obtenerUltimaCompra(vendedores[0].id_bodega)
-        const bodega = await generalService.getTableInformationCrm('bodegas','id',vendedores[0].id_bodega)
-  
+        const bodega = await generalService.getTableInformationCrm('bodegas', 'id', vendedores[0].id_bodega)
+
         res.send({
             error: 0,
             vendedores: vendedores,
-            codigoNuevo:ultimaCompra ? +ultimaCompra.codigo + 1 : 0,
-            esBrt: (bodega.length>0)? bodega[0].es_brt : null
+            codigoNuevo: ultimaCompra ? +ultimaCompra.codigo + 1 : 0,
+            esBrt: (bodega.length > 0) ? bodega[0].es_brt : null
         })
 
     } catch (e: any) {
@@ -194,7 +194,7 @@ export const obtenerInfoProductoVenta = async (req: any, res: Response) => {
 
         res.send({
             error: 0,
-            producto:producto[0]
+            producto: producto[0]
         })
 
     } catch (e: any) {
@@ -228,51 +228,52 @@ export const crearVentaPos = async (req: any, res: Response) => {
         const ventaReq = req.body
         const ultimaCompra = await posDao.obtenerUltimaCompra(idTienda)
 
-        let venta ={
+        let venta = {
             codigo: +ultimaCompra.codigo + 1,
-            id_cliente:ventaReq.clienteId,
-            id_vendedor:ventaReq.vendedorId,
-            id_tienda:idTienda,
-            productos:JSON.stringify(ventaReq.productos),
-            impuesto:ventaReq.impuesto,
-            neto:ventaReq.neto,
-            total:ventaReq.total,
-            costos:ventaReq.costos,
-            descuento:ventaReq.descuento,
-            metodo_pago:JSON.stringify(ventaReq.pagos),
-            deuda:ventaReq.deuda,
-            fc:0
+            id_cliente: ventaReq.clienteId,
+            id_vendedor: ventaReq.vendedorId,
+            id_tienda: idTienda,
+            productos: JSON.stringify(ventaReq.productos),
+            impuesto: ventaReq.impuesto,
+            neto: ventaReq.neto,
+            total: ventaReq.total,
+            costos: ventaReq.costos,
+            descuento: ventaReq.descuento,
+            metodo_pago: JSON.stringify(ventaReq.pagos),
+            deuda: ventaReq.deuda,
+            factura_valida: 1,
+            fc: 0
         }
-        
+
         const nuevaVenta = await posDao.crearVentaPos(venta)
 
         /**Actualizar inventario e información del cliente */
-        if(nuevaVenta[0] && ventaReq.deuda == 0){
+        if (nuevaVenta[0] && ventaReq.deuda == 0) {
             for (const producto of ventaReq.productos) {
                 await posDao.editarStockPos(producto.id, idTienda, producto.stock)
 
                 // TODO: Actualizar inventario en el ecommerce 
                 /** Crear log venta */
                 const logVenta = {
-                    id_venta:nuevaVenta[0],
-                    id_producto:producto.id,
-                    id_tienda:idTienda,
-                    cantidad:producto.cantidad
+                    id_venta: nuevaVenta[0],
+                    id_producto: producto.id,
+                    id_tienda: idTienda,
+                    cantidad: producto.cantidad
                 }
                 await posDao.crearLogVentaCrm(logVenta)
             }
-        
+
             /** Actualizar compras del cliente */
-            const cliente = await generalService.getTableInformationCrm('clientes','id',ventaReq.clienteId)
-            await posDao.actualizarInfoClienteCrm(ventaReq.clienteId, { 
-                compras:+cliente[0].compras + 1,
-                ultima_compra:new Date()
+            const cliente = await generalService.getTableInformationCrm('clientes', 'id', ventaReq.clienteId)
+            await posDao.actualizarInfoClienteCrm(ventaReq.clienteId, {
+                compras: +cliente[0].compras + 1,
+                ultima_compra: new Date()
             })
         }
 
         res.send({
             error: 0,
-            ventaId:nuevaVenta[0],
+            ventaId: nuevaVenta[0],
             msg: {
                 icon: 'success',
                 text: 'Venta creada correctamente.'
@@ -293,9 +294,99 @@ export const crearVentaPos = async (req: any, res: Response) => {
 
 }
 
+
+
+export const cancelarFacturaPos = async (req: any, res: Response) => {
+    try {
+        const idVenta = req.params.id_venta
+        const ventaDetalle = await generalService.getTableInformationCrm('ventas', 'id', idVenta)
+
+        if (ventaDetalle.length == 0 || !ventaDetalle[0].factura_valida) {
+            return res.send({
+                error: 1,
+                msg: {
+                    icon: 'error',
+                    text: 'La factura no es válida para anular'
+                }
+            })
+        }
+
+        const ultimaCompraValida = await posDao.obtenerUltimaCompraDeClientePos(ventaDetalle[0].id_cliente, idVenta)
+        const infoCliente = await generalService.getTableInformationCrm('clientes', 'id', ventaDetalle[0].id_cliente)
+
+        let ultimaCompra = '0000-00-00 00:00:00'
+        const comprasActualizadas = (infoCliente[0].compras >0) ? +infoCliente[0].compras - 1 : 0
+
+        console.log('first')
+        if (ultimaCompraValida && Object.keys(ultimaCompraValida).length > 0) {
+            // ventaDetalle válido
+            ultimaCompra = ultimaCompraValida.fecha
+        }
+
+        await posDao.actualizarInfoClienteCrm(ventaDetalle[0].id_cliente, {
+            ultima_compra: ultimaCompra,
+            compras: comprasActualizadas
+        })
+
+        const productosNoActualizados: string[] = [];
+        const productos = JSON.parse(ventaDetalle[0].productos);
+        let error = 0
+        let text = 'La factura se ha anulado. Ya no la podrá ver en el historial.'
+
+        for (const producto of productos) {
+
+            const inventarioActual = await posDao.obtenerInventarioPorId(producto.id,ventaDetalle[0].id_tienda);
+
+            if (!inventarioActual) {
+                productosNoActualizados.push(`${producto.codigo} - ${producto.descripcion}`);
+                error = 1
+                continue;
+            }
+
+            const nuevoInventario =inventarioActual.stock + producto.cantidad;
+
+            await posDao.editarStockPos(
+                producto.id,
+                ventaDetalle[0].id_tienda,
+                nuevoInventario
+            );
+        }
+
+        if (productosNoActualizados.length > 0) {
+            error=1
+            text = `La operación se realizó parcialmente. No se pudo actualizar ` +
+                    `el inventario de los siguientes productos: ` +
+                    productosNoActualizados.join(", ")
+        }else{
+            await posDao.editarVentaPos(idVenta, { factura_valida:0})
+        }
+
+        res.send({
+            error,
+            msg: {
+                icon: 'warning',
+                text
+            }
+        })
+
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al anular la venta'
+            }
+        })
+    }
+
+}
+
+
 export const editarVentaPos = async (req: any, res: Response) => {
     try {
-        
+
         const codUsuario = req.auth.user.cod_usuario;
         const idVenta = req.params.id_venta
 
@@ -311,53 +402,53 @@ export const editarVentaPos = async (req: any, res: Response) => {
         }
         const idTienda = infoVendedor[0].id_bodega
         const ventaReq = req.body
-        const ultimaCompra = await generalService.getTableInformationCrm('ventas','id_tienda',idTienda)
+        const ultimaCompra = await generalService.getTableInformationCrm('ventas', 'id_tienda', idTienda)
 
-        let venta ={
+        let venta = {
             codigo: +ultimaCompra[0].codigo + 1,
-            id_cliente:ventaReq.clienteId,
-            id_vendedor:ventaReq.vendedorId,
-            id_tienda:idTienda,
-            productos:JSON.stringify(ventaReq.productos),
-            impuesto:ventaReq.impuesto,
-            neto:ventaReq.neto,
-            total:ventaReq.total,
-            costos:ventaReq.costos,
-            descuento:ventaReq.descuento,
-            metodo_pago:JSON.stringify(ventaReq.pagos),
-            deuda:ventaReq.deuda,
-            fc:0
+            id_cliente: ventaReq.clienteId,
+            id_vendedor: ventaReq.vendedorId,
+            id_tienda: idTienda,
+            productos: JSON.stringify(ventaReq.productos),
+            impuesto: ventaReq.impuesto,
+            neto: ventaReq.neto,
+            total: ventaReq.total,
+            costos: ventaReq.costos,
+            descuento: ventaReq.descuento,
+            metodo_pago: JSON.stringify(ventaReq.pagos),
+            deuda: ventaReq.deuda,
+            fc: 0
         }
-        
+
         const nuevaVenta = await posDao.editarVentaPos(idVenta, venta)
 
         /**Actualizar inventario e información del cliente */
-        if(ventaReq.deuda == 0){
+        if (ventaReq.deuda == 0) {
             for (const producto of ventaReq.productos) {
                 await posDao.editarStockPos(producto.id, idTienda, producto.stock)
 
                 // TODO: Actualizar inventario en el ecommerce 
                 /** Crear log venta */
                 const logVenta = {
-                    id_venta:idVenta,
-                    id_producto:producto.id,
-                    id_tienda:idTienda,
-                    cantidad:producto.cantidad
+                    id_venta: idVenta,
+                    id_producto: producto.id,
+                    id_tienda: idTienda,
+                    cantidad: producto.cantidad
                 }
                 await posDao.crearLogVentaCrm(logVenta)
             }
-        
+
             /** Actualizar compras del cliente */
-            const cliente = await generalService.getTableInformationCrm('clientes','id',ventaReq.clienteId)
-            await posDao.actualizarInfoClienteCrm(ventaReq.clienteId, { 
-                compras:+cliente[0].compras + 1,
-                ultima_compra:new Date()
+            const cliente = await generalService.getTableInformationCrm('clientes', 'id', ventaReq.clienteId)
+            await posDao.actualizarInfoClienteCrm(ventaReq.clienteId, {
+                compras: +cliente[0].compras + 1,
+                ultima_compra: new Date()
             })
         }
 
         res.send({
             error: 0,
-            ventaId:idVenta,
+            ventaId: idVenta,
             msg: {
                 icon: 'success',
                 text: 'Venta creada correctamente.'
@@ -384,23 +475,23 @@ export const obtenerVentasPos = async (req: any, res: Response) => {
         const codUsuario = req.auth.user.cod_usuario;
         const codPerfil = req.auth.user.cod_perfil;
         const filtros = req.body as IFiltrosVentasPOS
-        
+
         const perfilesValidosRes = await generalService.getTableInformation('variable', 'nombre', 'PERFILES_BUSQUEDA_VENTAS_POS');
         const perfilesValidos = JSON.parse(perfilesValidosRes[0].valor)
 
-        if(!perfilesValidos.includes(+codPerfil)){
+        if (!perfilesValidos.includes(+codPerfil)) {
             return res.send({
-                    error: 1,
-                    msg: {
-                        icon: 'error',
-                        text: 'El usuario no tiene permisos para crear una venta'
-                    }
-                })
+                error: 1,
+                msg: {
+                    icon: 'error',
+                    text: 'El usuario no tiene permisos para crear una venta'
+                }
+            })
         }
 
 
         // Si es vendedor validar su existencia, configuracion y su perfil
-        if(codPerfil == 8){
+        if (codPerfil == 8) {
             const infoVendedor = await generalService.getTableInformation('vendedor', 'cod_usuario', codUsuario)
             if (infoVendedor.length == 0) {
                 return res.send({
@@ -410,11 +501,11 @@ export const obtenerVentasPos = async (req: any, res: Response) => {
                         text: 'El usuario no tiene permisos ver las ventas'
                     }
                 })
-            }else{
+            } else {
                 filtros.id_tienda = infoVendedor[0].id_bodega
             }
         }
-        
+
         const ventas = await posDao.obtenerVentasPOS(filtros)
 
         res.send({
@@ -441,22 +532,22 @@ export const obtenerVentasRetomarCrm = async (req: any, res: Response) => {
         const codUsuario = req.auth.user.cod_usuario;
         const codPerfil = req.auth.user.cod_perfil;
         const filtros = req.body as IFiltrosVentasPOS
-        
+
         const perfilesValidosRes = await generalService.getTableInformation('variable', 'nombre', 'PERFILES_BUSQUEDA_VENTAS_POS');
         const perfilesValidos = JSON.parse(perfilesValidosRes[0].valor)
 
-        if(!perfilesValidos.includes(+codPerfil)){
+        if (!perfilesValidos.includes(+codPerfil)) {
             return res.send({
-                    error: 1,
-                    msg: {
-                        icon: 'error',
-                        text: 'El usuario no tiene permisos para crear una venta'
-                    }
-                })
+                error: 1,
+                msg: {
+                    icon: 'error',
+                    text: 'El usuario no tiene permisos para crear una venta'
+                }
+            })
         }
 
         // Si es vendedor validar su existencia, configuracion y su perfil
-        if(codPerfil == 8){
+        if (codPerfil == 8) {
             const infoVendedor = await generalService.getTableInformation('vendedor', 'cod_usuario', codUsuario)
             if (infoVendedor.length == 0) {
                 return res.send({
@@ -466,11 +557,11 @@ export const obtenerVentasRetomarCrm = async (req: any, res: Response) => {
                         text: 'El usuario no tiene permisos ver las ventas'
                     }
                 })
-            }else{
+            } else {
                 filtros.id_tienda = infoVendedor[0].id_bodega
             }
         }
-        
+
         const ventas = await posDao.obtenerVentasPendientesPOS(filtros)
 
         res.send({
@@ -498,15 +589,15 @@ export const obtenerVentasRetomarCrm = async (req: any, res: Response) => {
 export const obtenerVentaDetalle = async (req: any, res: Response) => {
     try {
         const idVenta = req.params.id_venta;
-        
+
         const venta = await posDao.obtenerVentaDetalle(idVenta)
-        
-        let productosModificados:IProductoVentaPOS[] = []
+
+        let productosModificados: IProductoVentaPOS[] = []
         for (const producto of JSON.parse(venta.productos)) {
-            const productoDetalle = await  generalService.getTableInformationCrm('productos','id',producto.id)
+            const productoDetalle = await generalService.getTableInformationCrm('productos', 'id', producto.id)
             productosModificados.push({
-                codigo:productoDetalle[0].codigo,
-                descripcion:productoDetalle[0].descripcion,
+                codigo: productoDetalle[0].codigo,
+                descripcion: productoDetalle[0].descripcion,
                 cantidad: producto.cantidad,
                 precio: producto.precio,
                 total: producto.total
@@ -515,7 +606,7 @@ export const obtenerVentaDetalle = async (req: any, res: Response) => {
 
         venta.productos = productosModificados
 
-        if (venta.metodo_pago) {        
+        if (venta.metodo_pago) {
             try {
                 venta.metodo_pago = JSON.parse(venta.metodo_pago);
             } catch (error) {
@@ -525,9 +616,9 @@ export const obtenerVentaDetalle = async (req: any, res: Response) => {
             venta.metodo_pago = [];
         }
 
-        venta.total_sin_descuento = venta.neto / (1 - venta.descuento );
+        venta.total_sin_descuento = venta.neto / (1 - venta.descuento);
         venta.total_productos = productosModificados.length
-        
+
         res.send({
             error: 0,
             venta
@@ -547,7 +638,58 @@ export const obtenerVentaDetalle = async (req: any, res: Response) => {
 
 }
 
-export const generarFactura = async (req: Request,res: Response) => {
+export const cancelarFactura = async (req: any, res: Response) => {
+    try {
+        const idVenta = req.params.id_venta;
+        const venta = await posDao.obtenerVentaDetalle(idVenta)
+
+        let productosModificados: IProductoVentaPOS[] = []
+        for (const producto of JSON.parse(venta.productos)) {
+            const productoDetalle = await generalService.getTableInformationCrm('productos', 'id', producto.id)
+            productosModificados.push({
+                codigo: productoDetalle[0].codigo,
+                descripcion: productoDetalle[0].descripcion,
+                cantidad: producto.cantidad,
+                precio: producto.precio,
+                total: producto.total
+            })
+        }
+
+        venta.productos = productosModificados
+
+        if (venta.metodo_pago) {
+            try {
+                venta.metodo_pago = JSON.parse(venta.metodo_pago);
+            } catch (error) {
+                venta.metodo_pago = [];
+            }
+        } else {
+            venta.metodo_pago = [];
+        }
+
+        venta.total_sin_descuento = venta.neto / (1 - venta.descuento);
+        venta.total_productos = productosModificados.length
+
+        res.send({
+            error: 0,
+            venta
+        })
+
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al obtener productos'
+            }
+        })
+    }
+
+}
+
+export const generarFactura = async (req: Request, res: Response) => {
 
     try {
         const { id_venta } = req.params;
@@ -564,11 +706,11 @@ export const generarFactura = async (req: Request,res: Response) => {
         }
 
         let productosModificados = []
-         for (const producto of JSON.parse(venta.productos)) {
-            const productoDetalle = await  generalService.getTableInformationCrm('productos','id',producto.id)
+        for (const producto of JSON.parse(venta.productos)) {
+            const productoDetalle = await generalService.getTableInformationCrm('productos', 'id', producto.id)
             productosModificados.push({
-                codigo:productoDetalle[0].codigo,
-                descripcion:productoDetalle[0].descripcion,
+                codigo: productoDetalle[0].codigo,
+                descripcion: productoDetalle[0].descripcion,
                 cantidad: producto.cantidad,
                 valorUnitario: currencyFormat(productoDetalle[0].precio_venta),
                 precioTotal: currencyFormat(productoDetalle[0].precio_venta * producto.cantidad),
@@ -577,27 +719,27 @@ export const generarFactura = async (req: Request,res: Response) => {
 
         venta.productos = productosModificados
 
-        const metodosPago = JSON.parse(venta.metodo_pago || "[]").map((metodoPago:any)=>({
-            metodo_pago:metodoPago.metodo_pago,
-            valor:currencyFormat(metodoPago.valor)
+        const metodosPago = JSON.parse(venta.metodo_pago || "[]").map((metodoPago: any) => ({
+            metodo_pago: metodoPago.metodo_pago,
+            valor: currencyFormat(metodoPago.valor)
         }));
 
         let msgResolucion = '';
         if (venta["fc"] == 1 || venta["fc"] == 2) {
             let resolucionInicial = '';
             let resolucionFinal = ''
-			if (venta["fc"] == 1) {
-				resolucionInicial = venta['cod_pos_inicial'];
-				resolucionFinal = venta['cod_pos_final'];
-			} else if (venta["fc"] == 2) {
-				resolucionInicial = venta['codigo_factura'];
-				resolucionFinal = venta['codigo_final'];
-			}
+            if (venta["fc"] == 1) {
+                resolucionInicial = venta['cod_pos_inicial'];
+                resolucionFinal = venta['cod_pos_final'];
+            } else if (venta["fc"] == 2) {
+                resolucionInicial = venta['codigo_factura'];
+                resolucionFinal = venta['codigo_final'];
+            }
 
-			msgResolucion = 'AUTORIZACION DIAN nº 00000000 DEL 000 DESDE  ' + resolucionInicial + ' HASTA ' + resolucionFinal + '';
-		} else if (venta["fc"] == 0) {
-			msgResolucion = 'GRACIAS POR SU COMPRA';
-		}
+            msgResolucion = 'AUTORIZACION DIAN nº 00000000 DEL 000 DESDE  ' + resolucionInicial + ' HASTA ' + resolucionFinal + '';
+        } else if (venta["fc"] == 0) {
+            msgResolucion = 'GRACIAS POR SU COMPRA';
+        }
 
         const fecha = new Date(venta.fecha);
         const anio = fecha.getFullYear();
@@ -612,56 +754,56 @@ export const generarFactura = async (req: Request,res: Response) => {
         const horaFormateada = `${horas}:${minutos}:${segundos}`;
 
         const data = {
-            codigo:venta.codigo,
-            fecha:fechaFormateada,
-            hora:horaFormateada,
-            usuario:venta.usuario,
-            
-            documento_cliente:venta.documento_cliente,
-            cliente:venta.cliente,
-            telefono_cliente:venta.telefono_cliente,
-            email_cliente:venta.email_cliente,
+            codigo: venta.codigo,
+            fecha: fechaFormateada,
+            hora: horaFormateada,
+            usuario: venta.usuario,
 
-            bodega:venta.tienda,
+            documento_cliente: venta.documento_cliente,
+            cliente: venta.cliente,
+            telefono_cliente: venta.telefono_cliente,
+            email_cliente: venta.email_cliente,
+
+            bodega: venta.tienda,
             productos: venta.productos,
             metodosPago,
 
-            nombre_empresa:(venta.es_brt == 1) ?  'INVERSIONES BRT SAS':'BARONATTO PH',
-            nombre_comercial:(venta.es_brt == 1) ?  '':'<br> Juan Pablo Huertas Rodriguez',
-            nit_empresa:(venta.es_brt == 1) ?  '901.474.311-8':'1000217136-7',
-            correo_empresa:(venta.es_brt == 1) ?  'inverbarsas@gmail.com':'almacenpablohuertastunja@gmail.com',
-            responsabilidad_fiscal:(venta.es_brt == 1) ? 'RESPONSABLE DE IVA':'NO RESPONSABLE DE IVA',
-            direccion_tienda:venta.direccion_tienda,
-            telefono_tienda:venta.telefono_tienda,
+            nombre_empresa: (venta.es_brt == 1) ? 'INVERSIONES BRT SAS' : 'BARONATTO PH',
+            nombre_comercial: (venta.es_brt == 1) ? '' : '<br> Juan Pablo Huertas Rodriguez',
+            nit_empresa: (venta.es_brt == 1) ? '901.474.311-8' : '1000217136-7',
+            correo_empresa: (venta.es_brt == 1) ? 'inverbarsas@gmail.com' : 'almacenpablohuertastunja@gmail.com',
+            responsabilidad_fiscal: (venta.es_brt == 1) ? 'RESPONSABLE DE IVA' : 'NO RESPONSABLE DE IVA',
+            direccion_tienda: venta.direccion_tienda,
+            telefono_tienda: venta.telefono_tienda,
             msgResolucion,
-            
-            total_productos: productosModificados.reduce((total: number,producto: any) => total + Number( producto.cantidad || 0),0),
-            descuento:venta.descuento,
-            impuesto:currencyFormat(venta.impuesto),
-            total:currencyFormat(venta.total),
-            subtotal:currencyFormat(venta.neto/(1-(venta.descuento/100)))
+
+            total_productos: productosModificados.reduce((total: number, producto: any) => total + Number(producto.cantidad || 0), 0),
+            descuento: venta.descuento,
+            impuesto: currencyFormat(venta.impuesto),
+            total: currencyFormat(venta.total),
+            subtotal: currencyFormat(venta.neto / (1 - (venta.descuento / 100)))
         };
 
-        const nombreInicial =generateRandomNumber(6);
-        const basePath = path.join(process.cwd(),"documents_storage/facturas",`${nombreInicial}_venta_${venta.codigo}`);
-        const htmlPath =`${basePath}.html`;
-        const pdfPath =`${basePath}.pdf`;
+        const nombreInicial = generateRandomNumber(6);
+        const basePath = path.join(process.cwd(), "documents_storage/facturas", `${nombreInicial}_venta_${venta.codigo}`);
+        const htmlPath = `${basePath}.html`;
+        const pdfPath = `${basePath}.pdf`;
 
         // -------------------------
         // HANDLEBARS
         // -------------------------
 
-        const templateHtml = fs.readFileSync(path.join(process.cwd(),`${DEV}/templates/factura_pos.html`),"utf8");
-        const template =Handlebars.compile(templateHtml);
+        const templateHtml = fs.readFileSync(path.join(process.cwd(), `${DEV}/templates/factura_pos.html`), "utf8");
+        const template = Handlebars.compile(templateHtml);
         const html = template(data);
-        fs.writeFileSync(htmlPath,html,"utf8");
+        fs.writeFileSync(htmlPath, html, "utf8");
 
         // -------------------------
         // PDF
         // -------------------------
 
-        const height = calcularAlturaFactura(productosModificados.length,metodosPago.length);
-        const pdf = await generatePdfTicket(pdfPath,htmlPath,height,true);
+        const height = calcularAlturaFactura(productosModificados.length, metodosPago.length);
+        const pdf = await generatePdfTicket(pdfPath, htmlPath, height, true);
 
         if (pdf.error !== 0) {
 
@@ -695,7 +837,7 @@ export const generarFactura = async (req: Request,res: Response) => {
 
                 fs.unlink(
                     pdfPath,
-                    (unlinkErr:any) => {
+                    (unlinkErr: any) => {
 
                         if (unlinkErr) {
 
@@ -730,7 +872,7 @@ export const generarFactura = async (req: Request,res: Response) => {
     }
 };
 
-const calcularAlturaFactura = (cantidadProductos: number,cantidadMetodosPago: number): number => {
+const calcularAlturaFactura = (cantidadProductos: number, cantidadMetodosPago: number): number => {
 
     let altura = 222;
     altura += cantidadProductos * 11;
@@ -742,7 +884,7 @@ const calcularAlturaFactura = (cantidadProductos: number,cantidadMetodosPago: nu
 export const obtenerTiposDocumento = async (req: any, res: Response) => {
     try {
         const tiposDocumento = await generalService.getTableInformationCrm('tipo_documento')
-        
+
         res.send({
             error: 0,
             tiposDocumento,
@@ -766,13 +908,13 @@ export const obtenerClientesPos = async (req: any, res: Response) => {
     try {
         const codUsuario = req.auth.user.cod_usuario;
         const infoVendedor = await generalService.getTableInformation('vendedor', 'cod_usuario', codUsuario)
-        
+
         let idTienda = null
         if (infoVendedor.length > 0) {
             idTienda = infoVendedor[0].id_bodega
         }
         const clientes = await posDao.obtenerClientesCrm(idTienda)
-        
+
         res.send({
             error: 0,
             clientes,
@@ -797,12 +939,12 @@ export const actualizarClienteCrm = async (req: Request, res: Response) => {
 
         let { idCliente } = req.params
 
-        let cliente = await posDao.actualizarInfoClienteCrm( +idCliente,req.body)
+        let cliente = await posDao.actualizarInfoClienteCrm(+idCliente, req.body)
         res.send({
             error: 0,
-            msg:{
-                icon:'success',
-                text:'Cliente actualizado correctamente'
+            msg: {
+                icon: 'success',
+                text: 'Cliente actualizado correctamente'
             }
         })
 
@@ -823,42 +965,42 @@ export const actualizarClienteCrm = async (req: Request, res: Response) => {
 
 export const crearClienteCrm = async (req: any, res: Response) => {
     try {
-        
+
         const codUsuario = req.auth.user.cod_usuario;
         let clienteNuevo = req.body
         const infoVendedor = await generalService.getTableInformation('vendedor', 'cod_usuario', codUsuario)
 
         if (infoVendedor.length > 0) {
-            const idTienda = infoVendedor[0].id_bodega   
-            clienteNuevo.origen = 'crear-venta-crm'  
+            const idTienda = infoVendedor[0].id_bodega
+            clienteNuevo.origen = 'crear-venta-crm'
             clienteNuevo.id_tienda = idTienda
             clienteNuevo.id_usuario = infoVendedor[0].id_usuario_crm
-        }else{
+        } else {
             clienteNuevo.origen = 'modulo-cliente-crm'
             clienteNuevo.id_tienda = 0
-            clienteNuevo.codUsuario  
+            clienteNuevo.codUsuario
         }
-       
-        const validarCliente = await generalService.getTableInformationCrm('clientes','documento',clienteNuevo.documento)
-        if(validarCliente.length > 0){
+
+        const validarCliente = await generalService.getTableInformationCrm('clientes', 'documento', clienteNuevo.documento)
+        if (validarCliente.length > 0) {
             return res.send({
                 error: 1,
-                msg:{
-                    icon:'error',
-                    text:'Ya existe un cliente con el documento ' + clienteNuevo.documento
+                msg: {
+                    icon: 'error',
+                    text: 'Ya existe un cliente con el documento ' + clienteNuevo.documento
                 }
             })
         }
         let cliente = await posDao.crearClienteCrm(clienteNuevo)
-        
+
         res.send({
             error: 0,
-            msg:{
-                icon:'success',
-                text:'Cliente creado correctamente'
+            msg: {
+                icon: 'success',
+                text: 'Cliente creado correctamente'
             },
-            idCliente:cliente[0],
-            documento:req.body.documento
+            idCliente: cliente[0],
+            documento: req.body.documento
         })
 
     } catch (e: any) {
@@ -878,9 +1020,9 @@ export const crearClienteCrm = async (req: any, res: Response) => {
 export const obtenerVentaParaRemotar = async (req: any, res: Response) => {
     try {
         const idVenta = req.params.id_venta;
-        
-        const ventaInfo = await generalService.getTableInformationCrm('ventas','id',idVenta)
-        if(ventaInfo.length == 0){
+
+        const ventaInfo = await generalService.getTableInformationCrm('ventas', 'id', idVenta)
+        if (ventaInfo.length == 0) {
             return res.send({
                 error: 1,
                 msg: {
@@ -893,15 +1035,15 @@ export const obtenerVentaParaRemotar = async (req: any, res: Response) => {
         const venta = ventaInfo[0]
 
         const descuento = venta.descuento
-   
-        let productosModificados:any[] = []
+
+        let productosModificados: any[] = []
         for (const producto of JSON.parse(venta.productos)) {
-            const productoDetalle = await  generalService.getTableInformationCrm('productos','id',producto.id)
-            const inventarioProducto = await  posDao.obtenerProductoPorCodigoVenta(productoDetalle[0].codigo, venta.id_tienda)
+            const productoDetalle = await generalService.getTableInformationCrm('productos', 'id', producto.id)
+            const inventarioProducto = await posDao.obtenerProductoPorCodigoVenta(productoDetalle[0].codigo, venta.id_tienda)
             productosModificados.push({
-                id:producto.id,
-                codigo:productoDetalle[0].codigo,
-                nombre:productoDetalle[0].descripcion,
+                id: producto.id,
+                codigo: productoDetalle[0].codigo,
+                nombre: productoDetalle[0].descripcion,
                 precio: producto.precio,
                 stock: inventarioProducto[0].stock,
                 costo: productoDetalle[0].precio_compra,
@@ -910,7 +1052,7 @@ export const obtenerVentaParaRemotar = async (req: any, res: Response) => {
         }
 
 
-        if (venta.metodo_pago) {        
+        if (venta.metodo_pago) {
             try {
                 venta.metodo_pago = JSON.parse(venta.metodo_pago);
             } catch (error) {
@@ -920,10 +1062,10 @@ export const obtenerVentaParaRemotar = async (req: any, res: Response) => {
             venta.metodo_pago = [];
         }
 
-        let metodosPagoModificado:any[] = []
+        let metodosPagoModificado: any[] = []
         for (const metodoPago of venta.metodo_pago) {
-            const detalleMetodoPago = await generalService.getTableInformationCrm('metodos_pago','valor',metodoPago.metodo_pago)
-            if(detalleMetodoPago.length > 0){
+            const detalleMetodoPago = await generalService.getTableInformationCrm('metodos_pago', 'valor', metodoPago.metodo_pago)
+            if (detalleMetodoPago.length > 0) {
                 metodosPagoModificado.push({
                     id_metodo_pago: detalleMetodoPago[0].id,
                     nombre: detalleMetodoPago[0].valor,
@@ -932,24 +1074,24 @@ export const obtenerVentaParaRemotar = async (req: any, res: Response) => {
             }
         }
 
-        const clienteInfo = await generalService.getTableInformationCrm('clientes','id',venta.id_cliente)
+        const clienteInfo = await generalService.getTableInformationCrm('clientes', 'id', venta.id_cliente)
         const clienteModificado = {
             id: clienteInfo[0].id,
             documento: clienteInfo[0].documento,
             nombre: clienteInfo[0].nombre,
             dv: clienteInfo[0].dv
         }
-        
+
         const vendedor = await posDao.obtenerVendedoresVenta(venta.id_vendedor)
 
-        
+
         res.send({
             error: 0,
             descuento,
-            productos:productosModificados,
-            cliente:clienteModificado,
+            productos: productosModificados,
+            cliente: clienteModificado,
             vendedor,
-            mediosPago:metodosPagoModificado
+            mediosPago: metodosPagoModificado
         })
 
     } catch (e: any) {
@@ -970,10 +1112,10 @@ export const obtenerInventariosPos = async (req: any, res: Response) => {
     try {
         const codUsuario = req.auth.user.cod_usuario;
         const codPerfil = req.auth.user.cod_perfil;
-        const filtros = req.body as {id_tienda:number[]}
-        
+        const filtros = req.body as { id_tienda: number[] }
+
         // Si es vendedor validar su existencia, configuracion y su perfil
-        if(codPerfil == 8){
+        if (codPerfil == 8) {
             const infoVendedor = await generalService.getTableInformation('vendedor', 'cod_usuario', codUsuario)
             if (infoVendedor.length == 0) {
                 return res.send({
@@ -983,11 +1125,11 @@ export const obtenerInventariosPos = async (req: any, res: Response) => {
                         text: 'El usuario no tiene permisos ver las ventas'
                     }
                 })
-            }else{
+            } else {
                 filtros.id_tienda = [infoVendedor[0].id_bodega]
             }
         }
-        
+
         const inventarios = await posDao.obtenerInventariosPos(filtros)
 
         res.send({
@@ -1036,7 +1178,7 @@ export const obtenerInventarioPorCodigo = async (req: any, res: Response) => {
 export const busquedaInventarioCodigo = async (req: any, res: Response) => {
     try {
         const codigo = req.params.codigo;
-        const inventarios = await posDao.obtenerInventariosPos({codigo, id_tienda:[]}, true)
+        const inventarios = await posDao.obtenerInventariosPos({ codigo, id_tienda: [] }, true)
         res.send({
             error: 0,
             inventarios
@@ -1058,31 +1200,31 @@ export const busquedaInventarioCodigo = async (req: any, res: Response) => {
 
 export const transferirProductosEntreBodegas = async (req: any, res: Response) => {
     try {
-        
+
         const codUsuario = req.auth.user.cod_usuario;
         const transferencia = req.body as ITrasladoProductos
-        
+
         for (const producto of transferencia.productos) {
 
-            const stockBodegaSalida = producto.cantidadDisponible - producto.cantidadTransferir 
-            await posDao.editarStockPos(producto.id,transferencia.bodegaSalida,stockBodegaSalida)
+            const stockBodegaSalida = producto.cantidadDisponible - producto.cantidadTransferir
+            await posDao.editarStockPos(producto.id, transferencia.bodegaSalida, stockBodegaSalida)
 
             const stockActualBodegaEntrada = await posDao.obtenerInventarioPorCodigo(producto.codigo, transferencia.bodegaEntrada)
-            await posDao.editarStockPos(producto.id,transferencia.bodegaEntrada,stockActualBodegaEntrada.cantidadDisponible + producto.cantidadTransferir)
-        
+            await posDao.editarStockPos(producto.id, transferencia.bodegaEntrada, stockActualBodegaEntrada.cantidadDisponible + producto.cantidadTransferir)
+
             const logTraslado = {
                 id_usuario: codUsuario,
-                stock:producto.cantidadTransferir,
-                id_bodega_salida:transferencia.bodegaSalida,
-                id_bodega_entrada:transferencia.bodegaEntrada,
-                id_cod_producto:producto.id
+                stock: producto.cantidadTransferir,
+                id_bodega_salida: transferencia.bodegaSalida,
+                id_bodega_entrada: transferencia.bodegaEntrada,
+                id_cod_producto: producto.id
             }
 
             await posDao.crearLogTrasladoPos(logTraslado)
         }
 
 
-       
+
 
         res.send({
             error: 0,
@@ -1109,24 +1251,24 @@ export const transferirProductosEntreBodegas = async (req: any, res: Response) =
 
 export const obtenerHistorialTraslados = async (req: any, res: Response) => {
     try {
-        let filtros = req.body as IFiltroTrasladosProductos 
+        let filtros = req.body as IFiltroTrasladosProductos
         let traslados = await posDao.mostrarLogTransferencia(filtros)
-        
+
         let trasladosTratados = []
         for (const traslado of traslados) {
-            if(!traslado.usuario){
+            if (!traslado.usuario) {
                 console.log('--- Vamos a validar el usuario ---')
-                const usuarioCrm = await generalService.getTableInformation('usuario','cod_usuario',traslado.id_usuario)
+                const usuarioCrm = await generalService.getTableInformation('usuario', 'cod_usuario', traslado.id_usuario)
                 console.log('--- Vamos a validar el usuario ---')
-                if(usuarioCrm.length > 0 ){
+                if (usuarioCrm.length > 0) {
                     trasladosTratados.push({
                         ...traslado,
-                        usuario:usuarioCrm[0].nombre
+                        usuario: usuarioCrm[0].nombre
                     })
-                }else{
-                    trasladosTratados.push(traslado)    
+                } else {
+                    trasladosTratados.push(traslado)
                 }
-            }else{
+            } else {
                 trasladosTratados.push(traslado)
             }
         }
@@ -1135,7 +1277,7 @@ export const obtenerHistorialTraslados = async (req: any, res: Response) => {
 
         res.send({
             error: 0,
-           traslados:trasladosTratados
+            traslados: trasladosTratados
         })
 
     } catch (e: any) {
