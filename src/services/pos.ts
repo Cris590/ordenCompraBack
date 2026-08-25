@@ -156,11 +156,13 @@ export const obtenerVendedoresPorTienda = async (req: any, res: Response) => {
         const codUsuario = req.auth.user.cod_usuario;
         const vendedores = await posDao.obtenerVendedoresPorTienda(codUsuario)
         const ultimaCompra = await posDao.obtenerUltimaCompra(vendedores[0].id_bodega)
+        const bodega = await generalService.getTableInformationCrm('bodegas','id',vendedores[0].id_bodega)
   
         res.send({
             error: 0,
             vendedores: vendedores,
-            codigoNuevo:ultimaCompra ? +ultimaCompra.codigo + 1 : 0
+            codigoNuevo:ultimaCompra ? +ultimaCompra.codigo + 1 : 0,
+            esBrt: (bodega.length>0)? bodega[0].es_brt : null
         })
 
     } catch (e: any) {
