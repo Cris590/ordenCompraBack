@@ -676,7 +676,9 @@ export const detalleCargoEntidad = async (req: Request, res: Response) => {
         let { codCargoEntidad } = req.params
         let cargo = await generalService.getTableInformation('cargo_entidad', 'cod_cargo_entidad', codCargoEntidad)
         if (cargo.length > 0) {
-            cargo[0].cod_categorias = JSON.parse(cargo[0].cod_categorias)
+            if (cargo.length > 0 && typeof cargo[0].cod_categorias === 'string') {
+                cargo[0].cod_categorias = JSON.parse(cargo[0].cod_categorias);
+            }
             cargo[0].cod_cargo_bonos_producto = await generalService.getTableInformation('cargo_bonos_producto', 'cod_cargo_entidad', codCargoEntidad)
         }
         res.send({
