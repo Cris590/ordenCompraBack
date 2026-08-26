@@ -5,44 +5,61 @@ import { IProductoDetalle } from '../interfaces/producto';
 import { borrarArchivo, subirArchivo } from '../helpers/subir-archivo';
 
 
-
 export const obtenerProductos = async (req: Request, res: Response) => {
     try {
-        let productos = await productoDao.getProductos()
-        let productosResumen = []
+        const productos = await productoDao.getProductos();
+        const productosResumen = [];
+
         for (const producto of productos) {
-            let colorProducto: {color:string , color_descripcion:string}[] = []
+            let colorProducto: {
+                color: string;
+                color_descripcion: string;
+            }[] = [];
+
             if (producto.tiene_color) {
-                colorProducto = await productoDao.getColoresProductoResumen(producto.cod_producto)
+                colorProducto = await productoDao.getColoresProductoResumen(
+                    producto.cod_producto
+                );
             }
 
-            productosResumen.push ({
+            const talla = producto.tiene_talla ? typeof producto.talla === 'string'
+                        ? producto.talla
+                            ? JSON.parse(producto.talla)
+                            : undefined
+                        : producto.talla
+                    : undefined;
+
+            const sexo =
+                typeof producto.sexo === 'string'
+                    ? JSON.parse(producto.sexo)
+                    : producto.sexo;
+
+            productosResumen.push({
                 ...producto,
                 color: producto.tiene_color ? colorProducto : undefined,
-                talla: producto.tiene_talla ? JSON.parse(producto.talla || '') : undefined,
-                sexo: JSON.parse(producto.sexo)
-
-            })
+                talla,
+                sexo
+            });
         }
 
         res.send({
             error: 0,
             productos: productosResumen
-        })
+        });
 
     } catch (e: any) {
-        console.log('***********')
-        console.log(e)
+        console.log('***********');
+        console.log(e);
+
         res.send({
             error: 1,
             msg: {
                 icon: 'error',
                 text: 'Error al consultar los productos'
             }
-        })
+        });
     }
-
-}
+};
 
 
 export const obtenerProductoEditar = async (req: Request, res: Response) => {
