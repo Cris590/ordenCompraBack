@@ -158,9 +158,7 @@ export const redimirBonoEntrega = async (req: Request, res: Response) => {
             cod_usuario
         }
 
-        const actualizar = await entidadBonosDao.redimirBonoEntrega(parseJson(newDataEntrega), cod_usuario_bono_entrega)
-
-
+        const actualizar = await entidadBonosDao.redimirBonoEntrega(JSON.stringify(newDataEntrega), cod_usuario_bono_entrega)
 
         res.send({
             error: 0,
