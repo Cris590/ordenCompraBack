@@ -4,6 +4,7 @@ import * as productoDao from '../databases/producto'
 
 import * as generalService from '../services/general'
 import { RequestToken } from '../interfaces/express';
+import { parseJson } from '../utils/parseJson';
 
 
 export const obtenerProductos = async (req: Request, res: Response) => {
@@ -46,15 +47,12 @@ export const obtenerProductos = async (req: Request, res: Response) => {
 
             productosResumen.push({
                 ...producto,
-                colores: producto.tiene_color ? coloresProducto : undefined,
+                colores: producto.tiene_color
+                    ? coloresProducto
+                    : undefined,
+
                 talla: producto.tiene_talla
-                    ? (() => {
-                        try {
-                            return producto.talla ? JSON.parse(producto.talla) : undefined;
-                        } catch {
-                            return undefined;
-                        }
-                    })()
+                    ? parseJson(producto.talla)
                     : undefined,
             });
         }
@@ -137,14 +135,7 @@ export const obtenerProductoDetalle = async (req: Request, res: Response) => {
 
 const validarCategoriasActivas = async (categoriasString: string) => {
     try {
-        let categorias = categoriasString as any
-        if (typeof categoriasString === 'string') {
-            try {
-                categorias = JSON.parse(categoriasString);
-            } catch {
-                categorias = [];
-            }
-        }
+        const categorias = (parseJson(categoriasString) ?? []) as {cod_categoria: number;cantidad: number;}[];
         let categoriasActivas: { cod_categoria: number, cantidad: number, nombre: string }[] = []
         for (const categoria of categorias) {
             let categoriaActiva = await ordenCompraDao.getCategoriaActiva(categoria.cod_categoria)
