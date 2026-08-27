@@ -111,7 +111,7 @@ export const obtenerProductoDetalle = async (req: Request, res: Response) => {
         productoDetalle = {
             ...producto,
             colores: producto.tiene_color ? coloresProducto : undefined,
-            talla: producto.tiene_talla ? JSON.parse(producto.talla || '') : undefined,
+            talla: producto.tiene_talla ? parseJson(producto.talla) : undefined,
         }
 
         res.send({
