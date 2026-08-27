@@ -781,7 +781,8 @@ export const generarFactura = async (req: Request, res: Response) => {
             descuento: venta.descuento,
             impuesto: currencyFormat(venta.impuesto),
             total: currencyFormat(venta.total),
-            subtotal: currencyFormat(venta.neto / (1 - (venta.descuento / 100)))
+            subtotal:currencyFormat(venta.neto / (1 - (venta.descuento / 100))),
+            subtotal_descuento: currencyFormat(venta.neto)
         };
 
         const nombreInicial = generateRandomNumber(6);
