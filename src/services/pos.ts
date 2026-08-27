@@ -1294,3 +1294,52 @@ export const obtenerHistorialTraslados = async (req: any, res: Response) => {
     }
 
 }
+
+
+export const entradaSalidaInventario = async (req: any, res: Response) => {
+    try {
+        const codUsuario = req.auth.user.cod_usuario;
+
+        
+        
+        let filtros = req.body as IFiltroTrasladosProductos
+        let traslados = await posDao.mostrarLogTransferencia(filtros)
+
+        let trasladosTratados = []
+        for (const traslado of traslados) {
+            if (!traslado.usuario) {
+                const usuarioCrm = await generalService.getTableInformation('usuario', 'cod_usuario', traslado.id_usuario)
+                console.log('--- Vamos a validar el usuario ---')
+                if (usuarioCrm.length > 0) {
+                    trasladosTratados.push({
+                        ...traslado,
+                        usuario: usuarioCrm[0].nombre
+                    })
+                } else {
+                    trasladosTratados.push(traslado)
+                }
+            } else {
+                trasladosTratados.push(traslado)
+            }
+        }
+
+
+
+        res.send({
+            error: 0,
+            traslados: trasladosTratados
+        })
+
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al obtener productos'
+            }
+        })
+    }
+
+}

@@ -9,6 +9,7 @@ const DEV = process.env.DEV || ''
 
 import * as generalService from './general'
 import * as entidadBonosDao from '../databases/entidad_bono'
+import { parseJson } from '../utils/parseJson';
 
 
 export const consultarBonos = async (req: Request, res: Response) => {
@@ -27,7 +28,7 @@ export const consultarBonos = async (req: Request, res: Response) => {
         let usuarios:any = []
         for (const usuario of usuariosAux) {
             let bonosEntregados = await entidadBonosDao.getUsuarioBonoEntrega(usuario.cod_usuario)
-            let redimido = bonosEntregados.filter((bono)=>JSON.parse(bono.data_entrega).redimido == 0).length == 0
+            let redimido = bonosEntregados.filter((bono)=>parseJson(bono.data_entrega).redimido == 0).length == 0
             usuario.redimido = redimido
             usuarios.push(usuario)
         }
@@ -58,7 +59,7 @@ export const consultarBonoUsuario = async (req: Request, res: Response) => {
         let bonos:any = []
 
         for (const bono of bonosEntregados) {
-            let dataEntrega = JSON.parse(bono.data_entrega)
+            let dataEntrega = parseJson(bono.data_entrega)
             let infoCargoBonosProducto = await generalService.getTableInformation('cargo_bonos_producto','cod_cargo_bonos_producto', dataEntrega.cod_cargo_bonos_producto)
 
             bonos.push({
@@ -98,7 +99,7 @@ export const consultarBonoUsuario = async (req: Request, res: Response) => {
 export const consultarEntidadesEntregaBonos = async (req: any, res: Response) => {
     try {
 
-        const entidadesUsuario = (req.auth.user.entidades) ? JSON.parse(req.auth.user.entidades) : []
+        const entidadesUsuario = (req.auth.user.entidades) ? parseJson(req.auth.user.entidades) : []
         const entidades = await generalService.getEntidadesEntregaBonos() as { cod_entidad:number, nombre:string}[]
 
         let entidadesFiltradas = [] as { cod_entidad:number, nombre:string}[]
@@ -142,7 +143,7 @@ export const redimirBonoEntrega = async (req: Request, res: Response) => {
         } = req.body
 
         const dataUsuarioBonoEntrega = await generalService.getTableInformation('usuario_bono_entrega', 'cod_usuario_bono_entrega',cod_usuario_bono_entrega)
-        const dataEntrega = JSON.parse(dataUsuarioBonoEntrega[0].data_entrega)
+        const dataEntrega = parseJson(dataUsuarioBonoEntrega[0].data_entrega)
 
         const fecha_redimido = (new Date())
 
@@ -157,7 +158,7 @@ export const redimirBonoEntrega = async (req: Request, res: Response) => {
             cod_usuario
         }
 
-        const actualizar = await entidadBonosDao.redimirBonoEntrega(JSON.stringify(newDataEntrega), cod_usuario_bono_entrega)
+        const actualizar = await entidadBonosDao.redimirBonoEntrega(parseJson(newDataEntrega), cod_usuario_bono_entrega)
 
 
 

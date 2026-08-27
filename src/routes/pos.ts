@@ -37,5 +37,7 @@ router.get('/busqueda_inventario_codigo/:codigo', posService.busquedaInventarioC
 router.post('/transferir_producto_entre_bodegas/', posService.transferirProductosEntreBodegas);
 router.post('/obtener_historial_translados/', posService.obtenerHistorialTraslados);
 
+router.post('/entrada_salida_inventario/', posService.entradaSalidaInventario );
+
 
 
