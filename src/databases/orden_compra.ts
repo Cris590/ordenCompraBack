@@ -167,7 +167,7 @@ export const obtenerReporteBonosRedimidos = (codUsuario: number, codEntidad:numb
             '1'
         )
         .andWhere('u.cod_usuario', codUsuario)
-        .andWhere('e.cod_entidad',codEntidad)
+        .andWhere('ube.cod_entidad',codEntidad)
         .orderBy('fecha_redimido','desc');
 
 }
