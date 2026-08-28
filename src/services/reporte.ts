@@ -12,6 +12,7 @@ import { createExcelFile } from '../helpers/crearExcel';
 import { formatDate } from '../helpers/formatDate';
 import { generateRandomNumber, getFileBase64 } from '../helpers/general';
 import { crearDocumentoPdfWK } from '../helpers/createDocumentPdf';
+import { parseJson } from '../utils/parseJson';
 
 
 
@@ -36,7 +37,7 @@ export const reporteGeneralEntidad = async (req: Request, res: Response) => {
         usuariosEntidadResult.forEach((result) => {
             usuariosEntidad.push({
                 ...result,
-                productos:(result.productos) ? JSON.parse(result.productos) : null,
+                productos:(result.productos) ? parseJson(result.productos as any) : null,
                 
             })
         })
@@ -145,7 +146,7 @@ export const reporteComparativo = async (req: Request, res: Response) => {
                 ...result,
                 nombre_supervisor:infoCoordinador[0].nombre,
                 cedula_supervisor:infoCoordinador[0].cedula,
-                productos:(result.productos) ? JSON.parse(result.productos) : null,
+                productos:(result.productos) ? parseJson(result.productos as any) : null,
             })
         })
 
@@ -248,7 +249,7 @@ export const descargarBonosUsuario = async (req: Request, res: Response) => {
         
         let usuarios = usuariosEntidadResult.map((usuario)=>{
 
-            let productosAux = JSON.parse(usuario.productos) as IProductoOrden[]
+            let productosAux = parseJson(usuario.productos as any) as IProductoOrden[]
 
             let productos = productosAux.reduce((acc, producto) => {
                 const { cod_producto, nombre, cantidad, categoria } = producto;

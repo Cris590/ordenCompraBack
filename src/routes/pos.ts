@@ -38,6 +38,7 @@ router.post('/transferir_producto_entre_bodegas/', posService.transferirProducto
 router.post('/obtener_historial_translados/', posService.obtenerHistorialTraslados);
 
 router.post('/entrada_salida_inventario/', posService.entradaSalidaInventario );
+router.post('/obtener_movimiento_inventarios/', posService.obtenerMovimientoInventarios );
 
 
 

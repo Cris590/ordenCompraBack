@@ -63,3 +63,10 @@ export interface IFiltroTrasladosProductos {
     id_bodega_entrada: number[];
     codigo_producto: string;
 }
+
+export interface IFiltroLogInventarios {
+    fecha_inicial: string;
+    fecha_final: string;
+    id_tienda: number[];
+    id_usuario: number[];
+}

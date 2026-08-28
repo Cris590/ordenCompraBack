@@ -3,7 +3,7 @@ import Knex from 'knex';
 import config from '../../knexfile';
 import { logCrm, logDatabasePYS } from '../helpers/logger';
 import * as formatMessages from '../helpers/formatLogMessages';
-import { IFiltrosVentasPOS, IFiltroTrasladosProductos } from '../interfaces/pos';
+import { IFiltroLogInventarios, IFiltrosVentasPOS, IFiltroTrasladosProductos } from '../interfaces/pos';
 
 const db = Knex(config.development);
 const dbCrm = Knex(config.crmbrt);
@@ -255,6 +255,19 @@ export const crearLogVentaCrm = async (logVenta: any) => {
     return dbCrm('log_ventas').insert(logVenta);
 }
 
+interface ILogInventario{
+    "id_cod_producto":number,
+    "id_tienda":number,
+    "id_usuario":number,
+    "stock_anterior":number,
+    "stock_nuevo":number,
+    "comentario":string,
+}
+export const crearLogInventarios = async (logInventario: ILogInventario) => {
+    return dbCrm('log_inventarios').insert(logInventario);
+}
+
+
 export const actualizarInfoClienteCrm = async (idCliente: number, dataCliente: any) => {
     return await dbCrm('clientes')
         .where('id', idCliente)
@@ -449,4 +462,56 @@ export const obtenerUltimaCompraDeClientePos = (idCliente:number, idVenta:number
         .andWhere('v.factura_valida',1)
         .orderBy('id','desc')
         .first()
+}
+
+export const crearLogInOutInventario = async (logInOut: any) => {
+    return dbCrm('log_in_out').insert(logInOut);
+}
+
+export const mostrarMovimientoInventarios= async (filtros: IFiltroLogInventarios) => {
+    const query = dbCrm("log_in_out as lg")
+        .select(
+            "lg.id_log_in_out",
+            dbCrm.raw(`
+                CASE
+                    WHEN tipo_operacion = 'in' THEN 'Entrada de inventario'
+                    ELSE 'Salida de inventario'
+                END AS tipo_operacion
+            `),
+            'lg.productos',
+            "b.nombre as bodega",
+            "u.nombre as usuario",
+            "lg.id_usuario",
+            "lg.comentario",
+            "lg.fecha"
+        )
+        .leftJoin("usuarios as u", "u.id", "lg.id_usuario")
+        .join("bodegas as b", "b.id", "lg.id_tienda")
+
+    // Fecha inicial
+    if (filtros.fecha_inicial) {
+        query.where(
+            "lg.fecha",
+            ">=",
+            `${filtros.fecha_inicial} 00:00:00`
+        );
+    }
+
+    // Fecha final
+    if (filtros.fecha_final) {
+        query.where(
+            "lg.fecha",
+            "<=",
+            `${filtros.fecha_final} 23:59:59`
+        );
+    }
+
+    // Bodega salida
+    if (filtros.id_tienda?.length) {
+        query.whereIn(
+            "lg.id_tienda",
+            filtros.id_tienda
+        );
+    }
+    return await query.orderBy("lg.id_log_in_out", "desc");
 }

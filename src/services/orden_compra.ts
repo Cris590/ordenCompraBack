@@ -229,7 +229,7 @@ export const validarOrdenUsuario = async (request: Request, res: Response) => {
         let orden = await ordenCompraDao.validarOrden(+codUsuario)
 
         if (orden.length > 0 && typeof orden[0].productos === 'string') {
-            orden[0].productos = JSON.parse(orden[0].productos);
+            orden[0].productos = parseJson(orden[0].productos);
         }
 
         let usuario = await ordenCompraDao.obtenerInfoUsuario(+codUsuario)

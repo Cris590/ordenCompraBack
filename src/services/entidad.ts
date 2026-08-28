@@ -28,6 +28,7 @@ import { processCSVFile } from '../helpers/csvUpload';
 import { realizarLlamadoConsola } from '../helpers/llamadoConsola';
 import { generateRandomNumber } from '../helpers/general';
 import { generatePdfCartaHorizontal } from '../helpers/createDocumentPdf';
+import { parseJson } from '../utils/parseJson';
 
 export const obtenerEntidades = async (req: Request, res: Response) => {
     try {
@@ -494,7 +495,7 @@ export const obtenerUsuariosEntidad = async (req: Request, res: Response) => {
             for (const usuario of usuariosEntidad) {
 
                 let bonosEntregados = await entidadBonosDao.getUsuarioBonoEntrega(usuario.cod_usuario)
-                let redimido = bonosEntregados.filter((bono) => JSON.parse(bono.data_entrega).redimido == 0).length == 0
+                let redimido = bonosEntregados.filter((bono) => parseJson(bono.data_entrega).redimido == 0).length == 0
                 usuario.redimido = redimido
                 usuarios.push(usuario)
             }
@@ -677,7 +678,7 @@ export const detalleCargoEntidad = async (req: Request, res: Response) => {
         let cargo = await generalService.getTableInformation('cargo_entidad', 'cod_cargo_entidad', codCargoEntidad)
         if (cargo.length > 0) {
             if (cargo.length > 0 && typeof cargo[0].cod_categorias === 'string') {
-                cargo[0].cod_categorias = JSON.parse(cargo[0].cod_categorias);
+                cargo[0].cod_categorias = parseJson(cargo[0].cod_categorias);
             }
             cargo[0].cod_cargo_bonos_producto = await generalService.getTableInformation('cargo_bonos_producto', 'cod_cargo_entidad', codCargoEntidad)
         }
@@ -901,7 +902,7 @@ export const resumenProductosEntidad = async (req: Request, res: Response) => {
                         productosResumen.push({
                             ...producto,
                             colores: producto.tiene_color ? coloresProducto : undefined,
-                            talla: producto.tiene_talla ? JSON.parse(producto.talla || '') : undefined,
+                            talla: producto.tiene_talla ? parseJson(producto.talla || '') : undefined,
                         })
                     }
 
@@ -945,7 +946,7 @@ export const resumenProductosEntidad = async (req: Request, res: Response) => {
 const validarCategoriasActivas = async (categoriasString: string) => {
     try {
 
-        let categorias = JSON.parse(categoriasString) as { cod_categoria: number, cantidad: string }[]
+        let categorias = parseJson(categoriasString) as any
         let categoriasActivas: { cod_categoria: number, cantidad: number, nombre: string, sexo: string[] }[] = []
         for (const categoria of categorias) {
             let categoriaActiva = await ordenCompraDao.getCategoriaActiva(categoria.cod_categoria)
@@ -954,7 +955,7 @@ const validarCategoriasActivas = async (categoriasString: string) => {
                     cod_categoria: categoria.cod_categoria,
                     cantidad: +categoria.cantidad,
                     nombre: categoriaActiva[0].nombre,
-                    sexo: JSON.parse(categoriaActiva[0].sexo)
+                    sexo: parseJson(categoriaActiva[0].sexo)
                 })
             }
         }
