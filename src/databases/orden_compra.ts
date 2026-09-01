@@ -145,16 +145,16 @@ export const obtenerReporteBonosRedimidos = (codUsuario: number, codEntidad:numb
             'e.nombre as entidad',
             'e.no_contrato'
         )
-        .join('usuario as u', function () {
+        .leftJoin('usuario as u', function () {
             this.on(
                 'u.cod_usuario',
                 '=',
                 db.raw(`JSON_UNQUOTE(JSON_EXTRACT(ube.data_entrega, '$.cod_usuario'))`)
             );
         })
-        .join('entidad as e', 'u.cod_entidad', 'e.cod_entidad')
-        .join('usuario as u2', 'u2.cod_usuario', 'ube.cod_usuario')
-        .join('cargo_bonos_producto as cbp', function () {
+        .leftJoin('entidad as e', 'u.cod_entidad', 'e.cod_entidad')
+        .leftJoin('usuario as u2', 'u2.cod_usuario', 'ube.cod_usuario')
+        .leftJoin('cargo_bonos_producto as cbp', function () {
             this.on(
                 'cbp.cod_cargo_bonos_producto',
                 '=',
@@ -171,3 +171,136 @@ export const obtenerReporteBonosRedimidos = (codUsuario: number, codEntidad:numb
         .orderBy('fecha_redimido','desc');
 
 }
+
+
+export const obtenerReporteBonosRedimidosTotalEntidad = (codEntidad: number): Promise<any[]> => {
+
+    return db('usuario_bono_entrega as ube')
+        .select(
+            db.raw(`
+                CASE
+                    WHEN JSON_UNQUOTE(
+                        JSON_EXTRACT(ube.data_entrega, '$.redimido')
+                    ) = '1'
+                    THEN JSON_UNQUOTE(
+                        JSON_EXTRACT(ube.data_entrega, '$.fecha_redimido')
+                    )
+                    ELSE 'PENDIENTE'
+                END AS fecha_redimido
+            `),
+
+            db.raw(`
+                CASE
+                    WHEN JSON_UNQUOTE(
+                        JSON_EXTRACT(ube.data_entrega, '$.redimido')
+                    ) = '1'
+                    THEN JSON_UNQUOTE(
+                        JSON_EXTRACT(ube.data_entrega, '$.comentario_cierre')
+                    )
+                    ELSE 'PENDIENTE'
+                END AS comentario_cierre
+            `),
+
+            db.raw(`
+                CASE
+                    WHEN JSON_UNQUOTE(
+                        JSON_EXTRACT(ube.data_entrega, '$.redimido')
+                    ) = '1'
+                    THEN JSON_UNQUOTE(
+                        JSON_EXTRACT(ube.data_entrega, '$.cedula_vendedor')
+                    )
+                    ELSE 'PENDIENTE'
+                END AS cedula_vendedor
+            `),
+
+            db.raw(`
+                CASE
+                    WHEN JSON_UNQUOTE(
+                        JSON_EXTRACT(ube.data_entrega, '$.redimido')
+                    ) = '1'
+                    THEN JSON_UNQUOTE(
+                        JSON_EXTRACT(ube.data_entrega, '$.nombre_vendedor')
+                    )
+                    ELSE 'PENDIENTE'
+                END AS nombre_vendedor
+            `),
+
+            db.raw(`
+                CASE
+                    WHEN JSON_UNQUOTE(
+                        JSON_EXTRACT(ube.data_entrega, '$.redimido')
+                    ) = '1'
+                    THEN JSON_UNQUOTE(
+                        JSON_EXTRACT(ube.data_entrega, '$.tienda')
+                    )
+                    ELSE 'PENDIENTE'
+                END AS tienda
+            `),
+
+            'u2.nombre',
+            'u2.cedula',
+            'u2.codigo',
+            'u2.sexo',
+            'cbp.valor',
+            'cbp.descripcion',
+            'e.nombre as entidad',
+            'e.no_contrato'
+        )
+
+        // Usuario que redimió el bono
+        .leftJoin('usuario as u', function () {
+            this.on(
+                'u.cod_usuario',
+                '=',
+                db.raw(`
+                    JSON_UNQUOTE(
+                        JSON_EXTRACT(
+                            ube.data_entrega,
+                            '$.cod_usuario'
+                        )
+                    )
+                `)
+            );
+        })
+
+        // La entidad sale directamente de ube
+        .join(
+            'entidad as e',
+            'e.cod_entidad',
+            'ube.cod_entidad'
+        )
+
+        // Usuario dueño del bono
+        .join(
+            'usuario as u2',
+            'u2.cod_usuario',
+            'ube.cod_usuario'
+        )
+
+        // Producto/cargo del bono
+        .join('cargo_bonos_producto as cbp', function () {
+            this.on(
+                'cbp.cod_cargo_bonos_producto',
+                '=',
+                db.raw(`
+                    JSON_UNQUOTE(
+                        JSON_EXTRACT(
+                            ube.data_entrega,
+                            '$.cod_cargo_bonos_producto'
+                        )
+                    )
+                `)
+            );
+        })
+        .where('ube.cod_entidad', codEntidad)
+        .orderByRaw(`
+            CASE
+                WHEN JSON_UNQUOTE(
+                    JSON_EXTRACT(ube.data_entrega, '$.redimido')
+                ) = '0'
+                THEN 0
+                ELSE 1
+            END
+        `)
+        .orderBy('fecha_redimido', 'asc').orderBy('u2.nombre', 'asc')
+};

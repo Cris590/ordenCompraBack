@@ -333,3 +333,27 @@ export const reporteBonosEntregados = async (request: any, res: Response) => {
     }
 
 }
+export const reporteBonosEntregadosTotalEntidad = async (request: any, res: Response) => {
+    try {
+
+        let { codEntidad } = request.params
+        let usuarios = await ordenCompraDao.obtenerReporteBonosRedimidosTotalEntidad(codEntidad)
+
+        res.send({
+            error: 0,
+            usuarios
+        })
+
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al validar las ordenes.'
+            }
+        })
+    }
+
+}
