@@ -42,3 +42,4 @@ router.post('/obtener_movimiento_inventarios/', posService.obtenerMovimientoInve
 
 
 
+

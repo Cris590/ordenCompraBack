@@ -1227,7 +1227,7 @@ export const transferirProductosEntreBodegas = async (req: any, res: Response) =
             const comentarioEntrada = 'Automatico. Movimiento de inventario entrada';
             const productosEntrada = [{
                 id: producto.id,
-                cantidad:  stockActualBodegaEntrada.cantidadDisponible + producto.cantidadTransferir,
+                cantidad: stockActualBodegaEntrada.cantidadDisponible + producto.cantidadTransferir,
                 existe: 1,
                 anterior: stockActualBodegaEntrada.cantidadDisponible,
                 cantidad_mod: producto.cantidadTransferir
@@ -1257,7 +1257,7 @@ export const transferirProductosEntreBodegas = async (req: any, res: Response) =
                 comentario: comentarioSalida,
             }
 
-            await posDao.crearLogInOutInventario([ logInOutEntrada, logInOutSalida])
+            await posDao.crearLogInOutInventario([logInOutEntrada, logInOutSalida])
         }
 
         res.send({
@@ -1350,12 +1350,12 @@ export const entradaSalidaInventario = async (req: any, res: Response) => {
         }
 
         const productosAjustado = productos.map((producto: any) => ({
-                id: producto.id_producto,
-                cantidad: producto.nuevo_stock,
-                existe: 1,
-                anterior: producto.stock_actual,
-                cantidad_mod: producto.cantidad
-            })
+            id: producto.id_producto,
+            cantidad: producto.nuevo_stock,
+            existe: 1,
+            anterior: producto.stock_actual,
+            cantidad_mod: producto.cantidad
+        })
         )
 
         const logInOut = {
@@ -1385,7 +1385,7 @@ export const entradaSalidaInventario = async (req: any, res: Response) => {
                 icon: 'error',
                 text: 'Error al modificar inventarios.'
             },
-            error_txt:e
+            error_txt: e
         })
     }
 
@@ -1396,41 +1396,41 @@ export const obtenerMovimientoInventarios = async (req: any, res: Response) => {
     try {
         const filtro = req.body
         let movimientos = await posDao.mostrarMovimientoInventarios(filtro)
-        
-        let movimientosAcumulados:any = []
+
+        let movimientosAcumulados: any = []
         for (const movimiento of movimientos) {
             let usuarioNombre = movimiento.usuario
             if (!movimiento.usuario) {
                 const usuarioCrm = await generalService.getTableInformation('usuario', 'cod_usuario', movimiento.id_usuario)
                 if (usuarioCrm.length > 0) {
-                   usuarioNombre = usuarioCrm[0].nombre
+                    usuarioNombre = usuarioCrm[0].nombre
                 }
-            } 
+            }
 
-            let produtosAux:any = [] 
-            for (const producto of parseJson( movimiento.productos)) {
-                const productoDetalle = await generalService.getTableInformationCrm('productos','id',producto.id)
+            let produtosAux: any = []
+            for (const producto of parseJson(movimiento.productos)) {
+                const productoDetalle = await generalService.getTableInformationCrm('productos', 'id', producto.id)
                 const productoAux = {
                     id: producto.id,
                     codigo: productoDetalle[0].codigo,
                     descripcion: productoDetalle[0].descripcion,
                     stock_actual: producto.cantidad,
                     cantidad: producto.cantidad_mod,
-                } 
+                }
 
                 produtosAux.push(productoAux)
-            }   
+            }
 
             let movimientoAux = {
                 ...movimiento,
-                usuario:usuarioNombre,
-                productos:produtosAux
+                usuario: usuarioNombre,
+                productos: produtosAux
             }
 
             movimientosAcumulados.push(movimientoAux)
-            
+
         }
-       
+
 
         res.send({
             error: 0,
@@ -1446,7 +1446,7 @@ export const obtenerMovimientoInventarios = async (req: any, res: Response) => {
                 icon: 'error',
                 text: 'Error al obtener historial de movimientos.'
             },
-            error_txt:String(e)
+            error_txt: String(e)
         })
     }
 

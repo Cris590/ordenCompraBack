@@ -14,6 +14,7 @@ router.get('/sincronizar_categoria_ecommerce/:cod_categoria', crmEcommerceServic
 router.get('/sincronizar_subcategoria_ecommerce/:cod_sub_categoria', crmEcommerceService.sincronizarSubCategoriaEcommerce);
 
 router.get('/obtener_productos_crm/', crmEcommerceService.obtenerProductosCrm);
+router.post('/descargar_excel_impresion_productos/', crmEcommerceService.descargarExcelImpresionProductos );
 router.get('/obtener_detalles_producto/:codigo_modelo', crmEcommerceService.obtenerDetalleProductosCrm);
 
 router.get('/obtener_colores_producto_crm/:codigo_modelo', crmEcommerceService.obtenerColoresProductoCrm);

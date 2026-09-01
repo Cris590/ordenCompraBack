@@ -8,6 +8,9 @@ import * as ecommerceIntegration from './ecommerce/_index'
 import { borrarArchivo, subirArchivo } from '../helpers/subir-archivo';
 import { IEditarProductoModelo, IProductoNuevoCrm } from '../interfaces/crm-ecommerce';
 import { INuevaVariacionWoo, INuevoEProductoWoo, IRespuestaCreacionEProducto } from '../interfaces/api/ecommerce';
+import { createExcelFile } from '../helpers/crearExcel';
+import fs from 'fs';
+import path from 'path';
 
 export const crearCategoria = async (req: Request, res: Response) => {
     try {
@@ -295,6 +298,62 @@ export const obtenerProductosCrm = async (req: Request, res: Response) => {
     }
 
 }
+
+export const descargarExcelImpresionProductos = async (req: any, res: Response) => {
+    try {
+
+        const {
+            buscar, idCategoria, idSubCategoria
+        } = req.body
+        const productos = await crmEcommerceDao.obtenerProductosCrmFiltros(buscar, idCategoria, idSubCategoria)
+
+        
+
+        let arreglo: any[] = []
+       
+        const now = new Date();
+        const timestamp = now.toISOString().replace(/[-:.TZ]/g, '');
+        const filePath = path.join(process.cwd(), `uploads/reportes/${timestamp}.xlsx`)
+
+        await createExcelFile(productos, filePath)
+        // Envía el archivo como respuesta
+        res.download(filePath, (err) => {
+            if (err) {
+                return res.send({
+                    error: 1,
+                    msg: {
+                        icon: 'error',
+                        text: 'Error al generar el informe, comuniquese con administrador'
+                    }
+                })
+            }
+
+            // Borra el archivo después de enviarlo
+            fs.unlink(filePath, (unlinkErr) => {
+                if (unlinkErr) {
+                    console.error('Error al borrar el archivo:', unlinkErr);
+                }
+            });
+        });
+
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al generar reporte de los productos'
+            }
+        })
+    }
+
+
+}
+
+
+
+
 
 
 export const obtenerDetalleProductosCrm = async (req: Request, res: Response) => {
@@ -763,16 +822,6 @@ export const editarProductoCrm = async (req: Request, res: Response) => {
 
         const coloresNuevos = producto.colores.filter((color) => !coloresCreados.map((colorCreado) => colorCreado.color).includes(color))
         const tallasNuevas = producto.tallas.filter((talla) => !tallasCreadas.map((tallaCreada) => tallaCreada.talla).includes(talla))
-
-        console.log('---------')
-
-        console.log(tallasCreadas)
-        console.log(coloresCreados)
-
-        console.log(coloresNuevos)
-        console.log(tallasNuevas)
-
-
 
         let productosNuevos: IProductoNuevoCrm[] = []
 

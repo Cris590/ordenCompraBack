@@ -254,3 +254,40 @@ export const obtenerInventarioProducto = (idProducto:number) => {
         .andWhere('b.inventario_ecommerce', 1)
         .andWhere('i.stock', '>', 0)
 }
+
+export const obtenerProductosCrmFiltros = (buscar:string, idCategoria:number,idSubCategoria:number) => {
+
+    
+
+    const query = dbCrm('productos as p')
+
+    if (buscar) {
+        query.where(function () {
+            this.where('p.descripcion', 'like', `%${buscar}%`)
+                .orWhere('p.codigo', 'like', `%${buscar}%`)
+                .orWhere('p.lote', 'like', `%${buscar}%`)
+                .orWhere('p.codigo_modelo', 'like', `%${buscar}%`);;
+        });
+    }
+
+    if (idCategoria) {
+        query.where('p.id_categoria', idCategoria);
+    }
+
+    if (idSubCategoria) {
+        query.where('p.id_sub_categoria', idSubCategoria);
+    }
+
+    return query
+        .select(
+            dbCrm.raw("LPAD(p.id_sub_categoria, 2, '0') as ref_prenda"),
+            'p.lote as fecha',
+            'p.descripcion',
+            'p.color',
+            dbCrm.raw('SUBSTRING(p.codigo, 7, 2) as color_secundario'),
+            'p.talla',
+            dbCrm.raw("CONCAT('$ ', FORMAT(p.precio_venta, 0, 'de_DE')) as precio"),
+            'p.codigo as  codigo_barras'
+        );
+        
+}
