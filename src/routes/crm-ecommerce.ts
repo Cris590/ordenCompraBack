@@ -1,10 +1,14 @@
 import dotenv from 'dotenv';
 import express from 'express';
+import {router as webhookRouter} from './webhook_ecommerce/webhook_ecommerce'
 import * as crmEcommerceService from '../services/crm-ecommerce';
 
 dotenv.config();
 
 export const router = express.Router();
+
+// WEBHOOK
+router.use('/webhook_woocomerce', webhookRouter);
 
 router.post('/crear_categoria_crm/', crmEcommerceService.crearCategoria);
 router.put('/editar_categoria_crm/:cod_categoria', crmEcommerceService.editarCategoria);

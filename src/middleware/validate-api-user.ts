@@ -5,8 +5,10 @@ interface RequestValidated extends Request {
 }
 
 export const validateApiRoute = async (req: Request, res: Response, next: NextFunction) => {
+    console.log('------------------')
+    console.log(req.path)
     let reqAux = req as RequestValidated
-    if (!(req.path.startsWith('/external')) || req.path.startsWith('/external/externalLogin')) {
+    if (!(req.path.startsWith('/external')) || req.path.startsWith('/external/externalLogin') || req.path.startsWith('/ecommerce/webhook_woocomerce')) {
         return next();
     } else {
         const userpermission = await externalLoginService.checkPermission(reqAux.auth.user_api, req.path)
