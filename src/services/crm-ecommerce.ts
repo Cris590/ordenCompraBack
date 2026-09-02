@@ -353,6 +353,27 @@ export const descargarExcelImpresionProductos = async (req: any, res: Response) 
 
 
 
+export const obtenerProductosListadoCrm = async (req: Request, res: Response) => {
+    try {
+        const codigoModelo = req.params.codigo_modelo
+        const productos = await crmEcommerceDao.obtenerProductosListadoCrm(codigoModelo)
+        res.send({
+           productos,
+            error: 0
+        });
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al obtener los productos, comuniquese con el administrador'
+            }
+        })
+    }
+
+}
 
 
 

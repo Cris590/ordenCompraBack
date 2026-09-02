@@ -616,13 +616,15 @@ export const editarUsuarioEntidad = async (req: Request, res: Response) => {
         const { codUsuario } = req.params
         let usuario: IUser = req.body
 
-        const keysValidas = ['cedula', 'email', 'nombre', 'password']
+        const keysValidas = ['cedula', 'email', 'nombre', 'password','activo']
 
         Object.keys(usuario).forEach((key) => {
             if (!keysValidas.includes(key)) {
                 delete usuario[key as keyof IUser];
             }
         });
+
+        console.log('-------->', usuario)
 
         await userService.editUser(usuario, +codUsuario)
         res.send({

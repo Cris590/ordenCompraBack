@@ -44,6 +44,7 @@ export const getBonos = async (filters: any)  => {
         .join('entidad as e', 'e.cod_entidad', 'u.cod_entidad')
         .join('cargo_entidad as c', 'c.cod_cargo_entidad', 'u.cod_cargo_entidad')
         .where('u.cod_perfil',5)
+        .andWhere('u.activo',1)
 
     if (Object.entries(filters).length > 0) {
         Object.entries(filters).forEach(([key, value]) => {

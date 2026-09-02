@@ -326,7 +326,14 @@ export const obtenerInventariosPos = async (filtros: {id_tienda: number[];codigo
         .select(
             'p.id',
             'p.codigo',
-            'p.descripcion',
+            dbCrm.raw(`
+                CASE
+                    WHEN pe.nombre_color IS NOT NULL
+                        AND pe.nombre_color != ''
+                    THEN CONCAT(p.descripcion, ' - ', pe.nombre_color)
+                    ELSE p.descripcion
+                END AS descripcion
+            `),
             'i.stock as cantidad',
             'b.id as id_bodega',
             'b.nombre as bodega',
@@ -337,7 +344,11 @@ export const obtenerInventariosPos = async (filtros: {id_tienda: number[];codigo
         .join('productos as p', 'p.id', 'i.id_cod_producto')
         .join('bodegas as b', 'i.id_tienda', 'b.id')
         .join('categorias as c', 'p.id_categoria', 'c.id')
-        .join('sub_categorias as sc', 'p.id_sub_categoria', 'sc.id');
+        .join('sub_categorias as sc', 'p.id_sub_categoria', 'sc.id')
+        .leftJoin('producto_color as pe', function () {
+            this.on('p.codigo_modelo', '=', 'pe.codigo_modelo')
+                .andOn('p.color', '=', 'pe.codigo_color');
+        })
 
     if (!validarSinFiltro) {
         query.whereIn('i.id_tienda', filtros.id_tienda);

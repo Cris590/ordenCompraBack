@@ -257,9 +257,11 @@ export const obtenerInventarioProducto = (idProducto:number) => {
 
 export const obtenerProductosCrmFiltros = (buscar:string, idCategoria:number,idSubCategoria:number) => {
 
-    
-
     const query = dbCrm('productos as p')
+        .leftJoin('producto_color as pe', function () {
+            this.on('p.codigo_modelo', '=', 'pe.codigo_modelo')
+                .andOn('p.color', '=', 'pe.codigo_color');
+        })
 
     if (buscar) {
         query.where(function () {
@@ -282,7 +284,14 @@ export const obtenerProductosCrmFiltros = (buscar:string, idCategoria:number,idS
         .select(
             dbCrm.raw("LPAD(p.id_sub_categoria, 2, '0') as ref_prenda"),
             'p.lote as fecha',
-            'p.descripcion',
+            dbCrm.raw(`
+                CASE
+                    WHEN pe.nombre_color IS NOT NULL
+                        AND pe.nombre_color != ''
+                    THEN CONCAT(p.descripcion, ' ', pe.nombre_color)
+                    ELSE p.descripcion
+                END AS descripcion
+            `),
             'p.color',
             dbCrm.raw('SUBSTRING(p.codigo, 7, 2) as color_secundario'),
             'p.talla',
@@ -290,4 +299,34 @@ export const obtenerProductosCrmFiltros = (buscar:string, idCategoria:number,idS
             'p.codigo as  codigo_barras'
         );
         
+}
+
+
+export const obtenerProductosListadoCrm = (codigoModelo:string) => {
+
+    return dbCrm.select(
+            'c.categoria',
+            'sc.sub_categoria',
+            'p.codigo',
+            dbCrm.raw(`
+                CASE
+                    WHEN pe.nombre_color IS NOT NULL
+                        AND pe.nombre_color != ''
+                    THEN CONCAT(p.descripcion, ' ', pe.nombre_color)
+                    ELSE p.descripcion
+                END AS descripcion
+            `),
+            'p.color',
+            'p.talla',
+            'pe.nombre_color',
+            'pe.codigo_color',
+            'pe.color as color_rgb'
+        ).from('productos as p')
+        .leftJoin('producto_color as pe', function () {
+            this.on('p.codigo_modelo', '=', 'pe.codigo_modelo')
+                .andOn('p.color', '=', 'pe.codigo_color');
+        })
+        .join('categorias as c', 'c.id', 'p.id_categoria')
+        .join('sub_categorias as sc', 'sc.id', 'p.id_sub_categoria')
+        .where('p.codigo_modelo', codigoModelo);
 }

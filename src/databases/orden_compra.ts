@@ -177,6 +177,7 @@ export const obtenerReporteBonosRedimidosTotalEntidad = (codEntidad: number): Pr
 
     return db('usuario_bono_entrega as ube')
         .select(
+            'u2.activo',
             db.raw(`
                 CASE
                     WHEN JSON_UNQUOTE(
