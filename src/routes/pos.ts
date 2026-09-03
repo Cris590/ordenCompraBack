@@ -10,7 +10,7 @@ router.get('/obtener_medios_pagos', posService.obtenerMediosPago);
 router.get('/obtener_cliente_por_documento/:documento', posService.obtenerClientePorDocumento);
 router.get('/obtener_tiendas_pos_usuario', posService.obtenerTiendasPosUsuario);
 router.get('/vendedores_crm', posService.obtenerVendedoresCrm);
-router.get('/vendedores_por_tienda', posService.obtenerVendedoresPorTienda);
+router.get('/vendedores_por_tienda/:idVenta?', posService.obtenerVendedoresPorTienda);
 router.get('/obtener_info_producto/:codigo', posService.obtenerInfoProductoVenta);
 
 

@@ -153,13 +153,23 @@ export const obtenerVendedoresPorTienda = async (req: any, res: Response) => {
     try {
         const codUsuario = req.auth.user.cod_usuario;
         const vendedores = await posDao.obtenerVendedoresPorTienda(codUsuario)
-        const ultimaCompra = await posDao.obtenerUltimaCompra(vendedores[0].id_bodega)
         const bodega = await generalService.getTableInformationCrm('bodegas', 'id', vendedores[0].id_bodega)
+
+    
+        const { idVenta } = req.params;
+        let codigoVenta 
+        if(idVenta){
+            const venta = await generalService.getTableInformationCrm('ventas', 'id', idVenta)
+            codigoVenta = venta[0].codigo
+        }else{
+            const ultimaCompra = await posDao.obtenerUltimaCompra(vendedores[0].id_bodega)
+            codigoVenta = ultimaCompra ? +ultimaCompra.codigo + 1 : 0
+        }
 
         res.send({
             error: 0,
             vendedores: vendedores,
-            codigoNuevo: ultimaCompra ? +ultimaCompra.codigo + 1 : 0,
+            codigoNuevo: codigoVenta,
             esBrt: (bodega.length > 0) ? bodega[0].es_brt : null
         })
 
@@ -403,10 +413,10 @@ export const editarVentaPos = async (req: any, res: Response) => {
         }
         const idTienda = infoVendedor[0].id_bodega
         const ventaReq = req.body
-        const ultimaCompra = await generalService.getTableInformationCrm('ventas', 'id_tienda', idTienda)
+        const ventaActual = await generalService.getTableInformationCrm('ventas', 'id', idVenta)
 
         let venta = {
-            codigo: +ultimaCompra[0].codigo + 1,
+            codigo: +ventaActual[0].codigo,
             id_cliente: ventaReq.clienteId,
             id_vendedor: ventaReq.vendedorId,
             id_tienda: idTienda,
@@ -617,7 +627,7 @@ export const obtenerVentaDetalle = async (req: any, res: Response) => {
             venta.metodo_pago = [];
         }
 
-        venta.total_sin_descuento = venta.neto / (1 - venta.descuento);
+        venta.total_sin_descuento = (venta.neto * 100 ) / ( 100 - venta.descuento)*( 1 + venta.impuesto / venta.neto)
         venta.total_productos = productosModificados.length
 
         res.send({
