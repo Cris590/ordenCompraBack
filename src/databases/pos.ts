@@ -67,9 +67,22 @@ export const obtenerVendedoresVenta = (idUsuarioCrm: number) => {
 
 export const obtenerProductoPorCodigoVenta = (codigo: string, idTienda: number) => {
     return dbCrm
-        .select('p.id', 'p.codigo', 'p.precio_venta as precio', 'i.stock', 'p.descripcion as nombre', 'p.precio_compra as costo')
+        .select('p.id', 'p.codigo', 'p.precio_venta as precio', 'i.stock', 
+            dbCrm.raw(`
+                CASE
+                    WHEN pe.nombre_color IS NOT NULL
+                        AND pe.nombre_color != ''
+                    THEN CONCAT(p.descripcion, ' - ', pe.nombre_color)
+                    ELSE p.descripcion
+                END AS nombre
+            `), 
+            'p.precio_compra as costo')
         .from('productos as p')
         .leftJoin('inventarios as i', 'i.id_cod_producto', 'p.id')
+        .leftJoin('producto_color as pe', function () {
+            this.on('p.codigo_modelo', '=', 'pe.codigo_modelo')
+                .andOn('p.color', '=', 'pe.codigo_color');
+        })
         .where('p.codigo', codigo)
         .andWhere('i.id_tienda', idTienda)
 }
@@ -369,11 +382,22 @@ export const obtenerInventarioPorCodigo = (codigo: string, idTienda:number) => {
         .select(
             'p.id',
             'p.codigo',
-            'p.descripcion',
+            dbCrm.raw(`
+                CASE
+                    WHEN pe.nombre_color IS NOT NULL
+                        AND pe.nombre_color != ''
+                    THEN CONCAT(p.descripcion, ' ', pe.nombre_color)
+                    ELSE p.descripcion
+                END AS descripcion
+            `),
             'i.stock as cantidadDisponible',
             )
         .from('inventarios as i')
         .join('productos as p', 'p.id', 'i.id_cod_producto')
+        .leftJoin('producto_color as pe', function () {
+            this.on('p.codigo_modelo', '=', 'pe.codigo_modelo')
+                .andOn('p.color', '=', 'pe.codigo_color');
+        })
         .where('p.codigo', codigo)
         .andWhere('i.id_tienda',idTienda)
         .first()
@@ -407,7 +431,14 @@ export const mostrarLogTransferencia = async (filtros: IFiltroTrasladosProductos
             "lg.id_log",
             'lg.id_usuario',
             "u.nombre as usuario",
-            "p.descripcion as producto",
+            dbCrm.raw(`
+                CASE
+                    WHEN pe.nombre_color IS NOT NULL
+                        AND pe.nombre_color != ''
+                    THEN CONCAT(p.descripcion, ' ', pe.nombre_color)
+                    ELSE p.descripcion
+                END AS producto
+            `),
             "p.codigo",
             "lg.stock",
             "b1.nombre as bodega_entrada",
@@ -417,7 +448,11 @@ export const mostrarLogTransferencia = async (filtros: IFiltroTrasladosProductos
         .join("productos as p", "p.id", "lg.id_cod_producto")
         .leftJoin("usuarios as u", "u.id", "lg.id_usuario")
         .join("bodegas as b1", "b1.id", "lg.id_bodega_entrada")
-        .join("bodegas as b2", "b2.id", "lg.id_bodega_salida");
+        .join("bodegas as b2", "b2.id", "lg.id_bodega_salida")
+        .leftJoin('producto_color as pe', function () {
+            this.on('p.codigo_modelo', '=', 'pe.codigo_modelo')
+                .andOn('p.color', '=', 'pe.codigo_color');
+        });
 
     // Fecha inicial
     if (filtros.fecha_inicial) {
