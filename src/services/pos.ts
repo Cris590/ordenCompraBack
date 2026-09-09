@@ -1063,7 +1063,6 @@ export const obtenerVentaParaRemotar = async (req: any, res: Response) => {
             })
         }
 
-
         if (venta.metodo_pago) {
             try {
                 venta.metodo_pago = JSON.parse(venta.metodo_pago);
@@ -1079,7 +1078,7 @@ export const obtenerVentaParaRemotar = async (req: any, res: Response) => {
             const detalleMetodoPago = await generalService.getTableInformationCrm('metodos_pago', 'valor', metodoPago.metodo_pago)
             if (detalleMetodoPago.length > 0) {
                 metodosPagoModificado.push({
-                    id_metodo_pago: detalleMetodoPago[0].id,
+                    id_metodo_pago: Date.now() + Math.random(),
                     nombre: detalleMetodoPago[0].valor,
                     valor: metodoPago.valor
                 })

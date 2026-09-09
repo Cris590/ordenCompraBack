@@ -7,3 +7,4 @@ dotenv.config();
 export const router = express.Router();
 
 router.post('/order', webhookEcommerceService.procesarPedidoWooCommerce);
+router.post('/update_order', webhookEcommerceService.actualizarPedidoWooCommerce);

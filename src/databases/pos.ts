@@ -229,7 +229,7 @@ export const obtenerVentaDetalle = (idVenta: number) => {
 
             "v.factura_valida",
             "v.fc",
-
+            "v.deuda",
             "v.impuesto",
             "v.descuento",
             "v.productos",
