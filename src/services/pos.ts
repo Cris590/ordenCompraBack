@@ -20,9 +20,13 @@ import { parseJson } from '../utils/parseJson';
 export const obtenerMediosPago = async (req: Request, res: Response) => {
     try {
         const metodosPago = await generalService.getTableInformationCrm('metodos_pago', 'activo', 1)
+        const metodosPagoModificado = metodosPago.map((metodoPago)=>({
+            ...metodoPago,
+            necesita_codigo: metodoPago.codigo
+        }))
         res.send({
             error: 0,
-            metodosPago
+            metodosPago: metodosPagoModificado
         })
 
     } catch (e: any) {
@@ -328,7 +332,6 @@ export const cancelarFacturaPos = async (req: any, res: Response) => {
         let ultimaCompra = '0000-00-00 00:00:00'
         const comprasActualizadas = (infoCliente[0].compras > 0) ? +infoCliente[0].compras - 1 : 0
 
-        console.log('first')
         if (ultimaCompraValida && Object.keys(ultimaCompraValida).length > 0) {
             // ventaDetalle válido
             ultimaCompra = ultimaCompraValida.fecha
@@ -1080,7 +1083,9 @@ export const obtenerVentaParaRemotar = async (req: any, res: Response) => {
                 metodosPagoModificado.push({
                     id_metodo_pago: Date.now() + Math.random(),
                     nombre: detalleMetodoPago[0].valor,
-                    valor: metodoPago.valor
+                    valor: metodoPago.valor,
+                    codigo_transaccion: metodoPago.codigo_transaccion,
+                    necesita_codigo: detalleMetodoPago[0].codigo
                 })
             }
         }
@@ -1141,11 +1146,20 @@ export const obtenerInventariosPos = async (req: any, res: Response) => {
             }
         }
 
+        const inventariosModificado:any = []
         const inventarios = await posDao.obtenerInventariosPos(filtros)
+        for (const producto of inventarios) {
+            const imagenes = (producto.cod_producto_color) ? await generalService.getTableInformationCrm('producto_color_imagen', 'cod_producto_color', producto.cod_producto_color) : []
+            inventariosModificado.push({
+                ...producto,
+                imagenes:imagenes.map((imagen) => imagen.url)
+            })
+
+        }
 
         res.send({
             error: 0,
-            inventarios
+            inventarios: inventariosModificado
         })
 
     } catch (e: any) {
@@ -1190,9 +1204,19 @@ export const busquedaInventarioCodigo = async (req: any, res: Response) => {
     try {
         const codigo = req.params.codigo;
         const inventarios = await posDao.obtenerInventariosPos({ codigo, id_tienda: [] }, true)
+
+        let inventariosModificado:any = []
+        for (const producto of inventarios) {
+            const imagenes = (producto.cod_producto_color) ? await generalService.getTableInformationCrm('producto_color_imagen', 'cod_producto_color', producto.cod_producto_color) : []
+            inventariosModificado.push({
+                ...producto,
+                imagenes:imagenes.map((imagen) => imagen.url)
+            })
+
+        }
         res.send({
             error: 0,
-            inventarios
+            inventarios:inventariosModificado
         })
 
     } catch (e: any) {
@@ -1423,6 +1447,7 @@ export const obtenerMovimientoInventarios = async (req: any, res: Response) => {
                     id: producto.id,
                     codigo: productoDetalle[0].codigo,
                     descripcion: productoDetalle[0].descripcion,
+                    talla:productoDetalle[0].talla,
                     stock_actual: producto.cantidad,
                     cantidad: producto.cantidad_mod,
                 }

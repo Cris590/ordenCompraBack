@@ -351,7 +351,11 @@ export const obtenerInventariosPos = async (filtros: {id_tienda: number[];codigo
             'b.id as id_bodega',
             'b.nombre as bodega',
             'c.categoria',
-            'sc.sub_categoria'
+            'sc.sub_categoria',
+            'pe.cod_producto_color',
+            'p.talla',
+            'pe.color as color_rgb',
+            'pe.nombre_color',
         )
         .from('inventarios as i')
         .join('productos as p', 'p.id', 'i.id_cod_producto')
@@ -391,6 +395,9 @@ export const obtenerInventarioPorCodigo = (codigo: string, idTienda:number) => {
                 END AS descripcion
             `),
             'i.stock as cantidadDisponible',
+            'p.talla',
+            'pe.nombre_color',
+            'pe.color as color_rgb'
             )
         .from('inventarios as i')
         .join('productos as p', 'p.id', 'i.id_cod_producto')

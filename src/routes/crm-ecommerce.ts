@@ -39,3 +39,10 @@ router.get('/obtener_tallajes_activas', crmEcommerceService.obtenerTallasActivas
 
 router.post('/editar_producto', crmEcommerceService.editarProductoCrm);
 router.post('/crear_producto', crmEcommerceService.crearProductoCrm);
+router.get('/obtener_pedidos_ecommerce', crmEcommerceService.obtenerPedidosEcommerce);
+router.get('/detalle_pedido_ecommerce/:cod_pedido', crmEcommerceService.obtenerDetallePedidoEcommerce);
+
+router.get('/obtener_inventario_pedido/:cod_pedido', crmEcommerceService.obtenerInventarioPedido);
+router.post('/crear_seguimiento_pedido/', crmEcommerceService.crearSeguimientoPedido);
+
+

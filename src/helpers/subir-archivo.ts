@@ -19,7 +19,7 @@ export const subirArchivo = async (file: fileUpload.UploadedFile, nombreCarpeta:
 
 
         // Validar las extensiones
-
+        console.log('File -> ', file)
         let extensionArchivo = file.name.split('.').at(-1) || ''
         if (!extensionesValidas.includes(extensionArchivo)) {
             return {
@@ -61,6 +61,7 @@ export const subirArchivo = async (file: fileUpload.UploadedFile, nombreCarpeta:
         }
 
     } catch (e) {
+        console.log('******* Error *******', e)
         return {
             error: 1,
             nombre: '',

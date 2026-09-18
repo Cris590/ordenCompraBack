@@ -4,13 +4,15 @@ const DEV = process.env.DEV || ''
 
 import * as generalService from './general'
 import * as crmEcommerceDao from '../databases/crm-ecommerce'
+import * as posDao from '../databases/pos'
 import * as ecommerceIntegration from './ecommerce/_index'
 import { borrarArchivo, subirArchivo } from '../helpers/subir-archivo';
-import { IEditarProductoModelo, IProductoNuevoCrm } from '../interfaces/crm-ecommerce';
+import { FiltroBusquedaPedidosEcommerce, IEditarProductoModelo, INuevoSeguimientoPedidoEcommerce, IProductoNuevoCrm } from '../interfaces/crm-ecommerce';
 import { INuevaVariacionWoo, INuevoEProductoWoo, IRespuestaCreacionEProducto } from '../interfaces/api/ecommerce';
 import { createExcelFile } from '../helpers/crearExcel';
 import fs from 'fs';
 import path from 'path';
+import { parseJson } from '../utils/parseJson';
 
 export const crearCategoria = async (req: Request, res: Response) => {
     try {
@@ -307,10 +309,10 @@ export const descargarExcelImpresionProductos = async (req: any, res: Response) 
         } = req.body
         const productos = await crmEcommerceDao.obtenerProductosCrmFiltros(buscar, idCategoria, idSubCategoria)
 
-        
+
 
         let arreglo: any[] = []
-       
+
         const now = new Date();
         const timestamp = now.toISOString().replace(/[-:.TZ]/g, '');
         const filePath = path.join(process.cwd(), `uploads/reportes/${timestamp}.xlsx`)
@@ -358,7 +360,7 @@ export const obtenerProductosListadoCrm = async (req: Request, res: Response) =>
         const codigoModelo = req.params.codigo_modelo
         const productos = await crmEcommerceDao.obtenerProductosListadoCrm(codigoModelo)
         res.send({
-           productos,
+            productos,
             error: 0
         });
     } catch (e: any) {
@@ -601,7 +603,7 @@ export const cargarImagenProducto = async (req: Request, res: Response) => {
             let subirFile = await subirArchivo(file, 'images')
 
             if (subirFile.error === 1) {
-                return subirFile
+                return res.send(subirFile)
                 break;
             }
             await crmEcommerceDao.insertarImagenProductoColorCrm({
@@ -1137,8 +1139,8 @@ const crearVariacionesWoo = async (producto: IEditarProductoModelo, idPadreWoo: 
 
         for (const productoCrm of productosCrm) {
             const colorProducto = coloresProducto.filter((color) => color.codigo_color === productoCrm.color)[0]
-            const stockProducto = await crmEcommerceDao.obtenerInventarioProducto(productoCrm.id)
-            
+            const stockProducto = await crmEcommerceDao.obtenerInventarioTotalProducto(productoCrm.id)
+
             const variacion: INuevaVariacionWoo = {
                 regular_price: String(producto.precio_venta),
                 sale_price: "",
@@ -1174,3 +1176,248 @@ const crearVariacionesWoo = async (producto: IEditarProductoModelo, idPadreWoo: 
         throw e;
     }
 }
+
+export const obtenerPedidosEcommerce = async (req: Request, res: Response) => {
+    try {
+        const filtros: FiltroBusquedaPedidosEcommerce = {
+            page: Number(req.query.page ?? 1),
+            perPage: Number(req.query.pp ?? 20),
+            documento: req.query.documento?.toString().trim(),
+            numeroPedido: req.query.numeroPedido?.toString().trim(),
+            codEstadoPedido: req.query.codEstadoPedido ? Number(req.query.codEstadoPedido) : undefined,
+            fechaDesde: req.query.fechaDesde?.toString().trim(),
+            fechaHasta: req.query.fechaHasta?.toString().trim(),
+            estadoFinal: req.query.estadoFinal !== undefined ? req.query.estadoFinal === 'true' : undefined
+        };
+
+        const [pedidos, total] = await Promise.all([
+            crmEcommerceDao.obtenerPedidosEcommerce(filtros),
+            crmEcommerceDao.totalPedidosEcommerce(filtros)
+        ]);
+
+        const totalPages = Math.ceil(
+            total / filtros.perPage
+        );
+
+        res.send({
+            data: pedidos,
+            pagination: {
+                page: filtros.page,
+                perPage: filtros.perPage,
+                count: pedidos.length,
+                total,
+                totalPages,
+                hasNext: filtros.page < totalPages,
+                hasPrevious: filtros.page > 1
+            }
+        });
+
+    } catch (e: any) {
+
+        console.log('***********');
+        console.log(e);
+
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al obtener los pedidos, comuniquese con el administrador'
+            }
+        });
+    }
+};
+
+
+export const obtenerDetallePedidoEcommerce = async (req: Request, res: Response) => {
+    try {
+
+        const codPedido = req.params.cod_pedido
+
+        const {
+            cod_ecommerce_cliente,
+            cod_direccion_facturacion,
+            cod_direccion_envio,
+            estados_siguientes,
+            ...pedido
+        } = await crmEcommerceDao.obtenerDetallePedidoEcommerce(codPedido)
+        const cliente = await crmEcommerceDao.obtenerClientePedidoEcommerce(cod_ecommerce_cliente)
+        const direccionFacturacion = await crmEcommerceDao.obtenerDireccionPedidoEcommerce(cod_direccion_facturacion)
+        const direccionEnvio = await crmEcommerceDao.obtenerDireccionPedidoEcommerce(cod_direccion_facturacion)
+
+        const productosPedido = await generalService.getTableInformation('ecommerce_pedidos_detalle', 'cod_ecommerce_pedido', codPedido)
+
+        let productos = []
+        for (const productoPedido of productosPedido) {
+            const productoCrm = await crmEcommerceDao.obtenerProductoPedidoEcommerce(productoPedido.id_woo_variacion)
+            const imagenes = (productoCrm.cod_producto_color) ? await generalService.getTableInformationCrm('producto_color_imagen', 'cod_producto_color', productoCrm.cod_producto_color) : []
+
+            productos.push({
+                categoria: productoCrm.categoria,
+                sub_categoria: productoCrm.sub_categoria,
+                codigo: productoCrm.codigo,
+                descripcion: productoCrm.descripcion,
+                color: productoCrm.color,
+                talla: productoCrm.talla,
+                cod_producto_color: productoCrm.cod_producto_color,
+                nombre_color: productoCrm.nombre_color,
+                codigo_color: productoCrm.codigo_color,
+                color_rgb: productoCrm.color_rgb,
+                precio_crm: productoCrm.precio_venta,
+                imagenes: imagenes.map((imagen) => imagen.url),
+                cantidad: productoPedido.cantidad,
+                precio: productoPedido.precio,
+                descuento: productoPedido.descuento,
+                impuesto: productoPedido.impuesto,
+                total: productoPedido.total,
+
+            })
+        }
+
+        const seguimientos = await crmEcommerceDao.obtenerSeguimientosPedidoEcommerce(codPedido)
+        const estadosPermitidos = await crmEcommerceDao.obtenerEstadosPermitidosPedidoEcommerce(parseJson(estados_siguientes))
+        const transactions = await crmEcommerceDao.obtenerTransaccionesPedidoEcommerce(codPedido)
+
+        res.send({
+            error: 0,
+            pedido,
+            cliente,
+            direccionFacturacion,
+            direccionEnvio,
+            productos,
+            seguimientos,
+            estadosPermitidos,
+            transactions
+        })
+
+
+    } catch (e: any) {
+
+        console.log('***********');
+        console.log(e);
+
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al obtener el detalle de los pedidos'
+            }
+        });
+    }
+};
+
+
+export const crearSeguimientoPedido = async (req: any, res: Response) => {
+    try {
+
+        const ESTADO_REQUIERE_INVENTARIO = 4;
+        const codUsuario = req.auth.user.cod_usuario;
+        const seguimiento = req.body as INuevoSeguimientoPedidoEcommerce
+        await crmEcommerceDao.crearSeguimientoPedidoEcommerce({
+            cod_ecommerce_pedido:seguimiento.cod_ecommerce_pedido,
+            cod_ecommerce_estado_pedido: seguimiento.cod_ecommerce_estado_pedido,
+            descripcion:seguimiento.descripcion
+        })
+
+        // Acá se va modificar el inventario
+        if(ESTADO_REQUIERE_INVENTARIO == seguimiento.cod_ecommerce_estado_pedido){
+            if(seguimiento.inventario && seguimiento.inventario.length > 0){
+                let productosSalida:any ={}
+                for (const movimientoInventario of seguimiento.inventario) {
+                    const idProducto = movimientoInventario.id_producto
+                    
+                    
+                    for (const asignacion of movimientoInventario.asignaciones) {
+                        const inventarioActual = await posDao.obtenerInventarioPorId(idProducto,asignacion.id_tienda)
+                        const nuevoInventario = inventarioActual.stock - asignacion.cantidad;
+                        await posDao.editarStockPos(idProducto, asignacion.id_tienda, nuevoInventario);
+
+                        // Crear Log
+                        if (!productosSalida[asignacion.id_tienda]) {
+                            productosSalida[asignacion.id_tienda] = [];
+                        }
+
+                        productosSalida[asignacion.id_tienda] = [
+                            ...productosSalida[asignacion.id_tienda],
+                            { 
+                                id: idProducto,
+                                cantidad: nuevoInventario,
+                                existe: 1,
+                                anterior: inventarioActual.stock,
+                                cantidad_mod: asignacion.cantidad
+                            }]   
+                    } 
+                }
+
+                for (const idTienda of Object.keys(productosSalida)) {
+                    const productos = productosSalida[idTienda]
+                    const logInOutSalida = {
+                        id_tienda: idTienda,
+                        id_usuario: codUsuario,
+                        tipo_operacion: 'out',
+                        productos: JSON.stringify(productos),
+                        comentario: 'Salida de inventario por pedido ecommerce ' + seguimiento.cod_ecommerce_pedido,
+                    }
+                    await posDao.crearLogInOutInventario([logInOutSalida])
+                }
+                  
+
+            }
+        }
+        res.send({
+            error: 0,
+            msg: {
+                icon: 'success',
+                text: 'Seguimiento creado correctamente.'
+            }
+        })
+
+
+    } catch (e: any) {
+
+        console.log('***********');
+        console.log(e);
+
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al crear el seguimiento del pedido.'
+            }
+        });
+    }
+};
+
+
+export const obtenerInventarioPedido = async (req: Request, res: Response) => {
+    try {
+        const codPedido = req.params.cod_pedido
+        const productosPedido = await generalService.getTableInformation('ecommerce_pedidos_detalle', 'cod_ecommerce_pedido', codPedido)
+        let inventario = []
+        for (const productoPedido of productosPedido) {
+            const productoCrm = await crmEcommerceDao.obtenerProductoPedidoEcommerce(productoPedido.id_woo_variacion)
+            const tiendas = await crmEcommerceDao.obtenerInventarioProductoBodegaActiva(productoCrm.id)
+            inventario.push({
+                codigo_producto: productoCrm.codigo,
+                cantidad_pedida: productoPedido.cantidad,
+                descripcion: productoCrm.descripcion,
+                id_producto: productoCrm.id,
+                tiendas
+            })
+        }
+
+        res.send({ inventario })
+
+    } catch (e: any) {
+
+        console.log('***********');
+        console.log(e);
+
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al obtener el detalle de los pedidos'
+            }
+        });
+    }
+};
