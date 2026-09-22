@@ -264,7 +264,7 @@ export const crearVentaPos = async (req: any, res: Response) => {
         const nuevaVenta = await posDao.crearVentaPos(venta)
 
         /**Actualizar inventario e información del cliente */
-        const promesasActualizacionInventario = []
+        let promesasActualizacionInventario = []
         if (nuevaVenta[0] && ventaReq.deuda == 0) {
             for (const producto of ventaReq.productos) {
                 await posDao.editarStockPos(producto.id, idTienda, producto.stock)
@@ -1373,6 +1373,7 @@ export const entradaSalidaInventario = async (req: any, res: Response) => {
         const comentario = req.body.comentario
         const productos = req.body.productos
 
+        let promesasActualizacionInventario = []
         for (const producto of productos) {
             await posDao.editarStockPos(producto.id_producto, codBodega, producto.nuevo_stock)
 
@@ -1385,7 +1386,10 @@ export const entradaSalidaInventario = async (req: any, res: Response) => {
                 comentario
             }
             await posDao.crearLogInventarios(logInventario)
+            promesasActualizacionInventario.push(ecommerceIntegration.actualizarInventarioEcommerce(producto.id))
         }
+
+        await Promise.all(promesasActualizacionInventario)
 
         const productosAjustado = productos.map((producto: any) => ({
             id: producto.id_producto,
