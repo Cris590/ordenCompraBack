@@ -5,6 +5,7 @@ import * as productoDao from '../databases/producto'
 import * as generalService from '../services/general'
 import { RequestToken } from '../interfaces/express';
 import { IFiltrosVentasPOS, IFiltroTrasladosProductos, IProductoVentaPOS, ITrasladoProductos } from '../interfaces/pos';
+import * as ecommerceIntegration from './ecommerce/_index'
 import { generateRandomNumber } from '../helpers/general';
 import { generatePdfTicket } from '../helpers/createDocumentPdf';
 import path from 'path';
@@ -263,6 +264,7 @@ export const crearVentaPos = async (req: any, res: Response) => {
         const nuevaVenta = await posDao.crearVentaPos(venta)
 
         /**Actualizar inventario e información del cliente */
+        const promesasActualizacionInventario = []
         if (nuevaVenta[0] && ventaReq.deuda == 0) {
             for (const producto of ventaReq.productos) {
                 await posDao.editarStockPos(producto.id, idTienda, producto.stock)
@@ -276,6 +278,7 @@ export const crearVentaPos = async (req: any, res: Response) => {
                     cantidad: producto.cantidad
                 }
                 await posDao.crearLogVentaCrm(logVenta)
+                promesasActualizacionInventario.push(ecommerceIntegration.actualizarInventarioEcommerce(producto.id))
             }
 
             /** Actualizar compras del cliente */
@@ -285,6 +288,8 @@ export const crearVentaPos = async (req: any, res: Response) => {
                 ultima_compra: new Date()
             })
         }
+
+        await Promise.all(promesasActualizacionInventario)
 
         res.send({
             error: 0,
@@ -721,13 +726,13 @@ export const generarFactura = async (req: Request, res: Response) => {
 
         let productosModificados = []
         for (const producto of JSON.parse(venta.productos)) {
-            const productoDetalle = await generalService.getTableInformationCrm('productos', 'id', producto.id)
+            const productoDetalle = await posDao.obtenerInfoDetalleProductoCrm(producto.id)
             productosModificados.push({
-                codigo: productoDetalle[0].codigo,
-                descripcion: productoDetalle[0].descripcion,
+                codigo: productoDetalle.codigo,
+                descripcion: productoDetalle.descripcion,
                 cantidad: producto.cantidad,
-                valorUnitario: currencyFormat(productoDetalle[0].precio_venta),
-                precioTotal: currencyFormat(productoDetalle[0].precio_venta * producto.cantidad),
+                valorUnitario: currencyFormat(+productoDetalle.precio_venta),
+                precioTotal: currencyFormat(+productoDetalle.precio_venta * +producto.cantidad),
             })
         }
 

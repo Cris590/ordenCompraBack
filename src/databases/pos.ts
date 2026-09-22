@@ -345,7 +345,8 @@ export const obtenerInfoDetalleProductoCrm = (idProducto:number) => {
                     THEN CONCAT(p.descripcion, ' ', pe.nombre_color)
                     ELSE p.descripcion
                 END AS descripcion
-            `)
+            `),
+            'p.precio_venta'
             )
         .from('productos as p')
         .leftJoin('producto_color as pe', function () {

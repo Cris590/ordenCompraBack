@@ -23,9 +23,7 @@ const api = axios.create({
 
 
 
-export const crearProductoWoo = async (
-    producto: INuevoEProductoWoo
-): Promise<IRespuestaCreacionEProducto> => {
+export const crearProductoWoo = async (producto: INuevoEProductoWoo): Promise<IRespuestaCreacionEProducto> => {
 
     const url = `${WOOCOMMERCE_URL}/products`;
 
@@ -215,3 +213,4 @@ export const actualizarVariacionWoo = async (
         throw e;
     }
 };
+

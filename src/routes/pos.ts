@@ -13,7 +13,6 @@ router.get('/vendedores_crm', posService.obtenerVendedoresCrm);
 router.get('/vendedores_por_tienda/:idVenta?', posService.obtenerVendedoresPorTienda);
 router.get('/obtener_info_producto/:codigo', posService.obtenerInfoProductoVenta);
 
-
 router.post('/obtener_ventas_crm/', posService.obtenerVentasPos);
 router.post('/obtener_ventas_pendientes_pos/', posService.obtenerVentasRetomarCrm);
 
