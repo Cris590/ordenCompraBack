@@ -608,10 +608,10 @@ export const obtenerVentaDetalle = async (req: any, res: Response) => {
 
         let productosModificados: IProductoVentaPOS[] = []
         for (const producto of JSON.parse(venta.productos)) {
-            const productoDetalle = await generalService.getTableInformationCrm('productos', 'id', producto.id)
+            const productoDetalle = await posDao.obtenerInfoDetalleProductoCrm(producto.id)
             productosModificados.push({
-                codigo: productoDetalle[0].codigo,
-                descripcion: productoDetalle[0].descripcion,
+                codigo: productoDetalle.codigo,
+                descripcion: productoDetalle.descripcion,
                 cantidad: producto.cantidad,
                 precio: producto.precio,
                 total: producto.total

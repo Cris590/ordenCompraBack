@@ -333,6 +333,30 @@ export const obtenerClientesCrm = async (id_tienda?: number) => {
     return query;
 };
 
+export const obtenerInfoDetalleProductoCrm = (idProducto:number) => {
+    return dbCrm
+        .select(
+            'p.id',
+            'p.codigo',
+            dbCrm.raw(`
+                CASE
+                    WHEN pe.nombre_color IS NOT NULL
+                        AND pe.nombre_color != ''
+                    THEN CONCAT(p.descripcion, ' ', pe.nombre_color)
+                    ELSE p.descripcion
+                END AS descripcion
+            `)
+            )
+        .from('productos as p')
+        .leftJoin('producto_color as pe', function () {
+            this.on('p.codigo_modelo', '=', 'pe.codigo_modelo')
+                .andOn('p.color', '=', 'pe.codigo_color');
+        })
+        .where('p.id', idProducto)
+        .first()
+}
+
+
 export const obtenerInventariosPos = async (filtros: {id_tienda: number[];codigo?: string;},validarSinFiltro = false) => {
 
     const query = dbCrm
