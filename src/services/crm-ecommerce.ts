@@ -1309,7 +1309,8 @@ export const obtenerDetallePedidoEcommerce = async (req: Request, res: Response)
 export const crearSeguimientoPedido = async (req: any, res: Response) => {
     try {
 
-        const ESTADO_REQUIERE_INVENTARIO = 4;
+        const ESTADO_REQUIERE_INVENTARIO = process.env.ESTADO_REQUIERE_INVENTARIO || 4;
+        const ESTADO_CANCELA_VENTA = process.env.ESTADO_REQUIERE_INVENTARIO ||  7;
         const codUsuario = req.auth.user.cod_usuario;
         const seguimiento = req.body as INuevoSeguimientoPedidoEcommerce
         await crmEcommerceDao.crearSeguimientoPedidoEcommerce({
@@ -1362,6 +1363,17 @@ export const crearSeguimientoPedido = async (req: any, res: Response) => {
                   
 
             }
+        }
+
+        // Si se cancela debe actualizarse el inventario en el ecommerce
+        if(ESTADO_CANCELA_VENTA == seguimiento.cod_ecommerce_estado_pedido){
+            let promesasActualizacionInventario = []
+            const productosPedido = await generalService.getTableInformation('ecommerce_pedidos_detalle', 'cod_ecommerce_pedido', seguimiento.cod_ecommerce_pedido)
+            for (const productoPedido of productosPedido) {
+                const productoCrm = await crmEcommerceDao.obtenerProductoPedidoEcommerce(productoPedido.id_woo_variacion)
+                promesasActualizacionInventario.push(ecommerceIntegration.actualizarInventarioEcommerce(productoCrm.id))
+            }
+            await Promise.all(promesasActualizacionInventario)
         }
         res.send({
             error: 0,

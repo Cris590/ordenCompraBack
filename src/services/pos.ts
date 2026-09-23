@@ -351,7 +351,7 @@ export const cancelarFacturaPos = async (req: any, res: Response) => {
         const productos = JSON.parse(ventaDetalle[0].productos);
         let error = 0
         let text = 'La factura se ha anulado. Ya no la podrá ver en el historial.'
-
+        let promesasActualizacionInventario = []
         for (const producto of productos) {
 
             const inventarioActual = await posDao.obtenerInventarioPorId(producto.id, ventaDetalle[0].id_tienda);
@@ -369,7 +369,10 @@ export const cancelarFacturaPos = async (req: any, res: Response) => {
                 ventaDetalle[0].id_tienda,
                 nuevoInventario
             );
+            promesasActualizacionInventario.push(ecommerceIntegration.actualizarInventarioEcommerce(producto.id))
         }
+
+        await Promise.all(promesasActualizacionInventario)
 
         if (productosNoActualizados.length > 0) {
             error = 1
