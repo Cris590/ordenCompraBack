@@ -599,17 +599,27 @@ export const cargarImagenProducto = async (req: Request, res: Response) => {
 
         let files = Array.isArray(req.files.imagen) ? req.files.imagen : [req.files.imagen]
 
+        console.log('-------- FILES -------')
+        console.log(files)
+        
         for (const file of files) {
-            let subirFile = await subirArchivo(file, 'images')
+            // let subirFile = await subirArchivo(file, 'images')
 
-            if (subirFile.error === 1) {
-                return res.send(subirFile)
-                break;
-            }
+            // if (subirFile.error === 1) {
+            //     return res.send(subirFile)
+            //     break;
+            // }
+            // await crmEcommerceDao.insertarImagenProductoColorCrm({
+            //     url: subirFile.nombre || '',
+            //     cod_producto_color: req.body.cod_producto_color
+            // })
+
+            const imagenWoo = await ecommerceIntegration.subirImagenWoo(file);
             await crmEcommerceDao.insertarImagenProductoColorCrm({
-                url: subirFile.nombre || '',
+                url: imagenWoo.source_url,
+                id_woo: imagenWoo.id,
                 cod_producto_color: req.body.cod_producto_color
-            })
+            });
 
         }
 
@@ -1138,7 +1148,7 @@ const crearVariacionesWoo = async (producto: IEditarProductoModelo, idPadreWoo: 
         const coloresProducto = await crmEcommerceDao.obtenerColorEImagenPorProducto(producto.codigo_modelo)
 
         for (const productoCrm of productosCrm) {
-            const colorProducto = coloresProducto.filter((color) => color.codigo_color === productoCrm.color)[0]
+            const colorProducto = coloresProducto.filter((color) => color.codigo_color === productoCrm.color)
             const stockProducto = await crmEcommerceDao.obtenerInventarioTotalProducto(productoCrm.id)
 
             const variacion: INuevaVariacionWoo = {
@@ -1148,13 +1158,17 @@ const crearVariacionesWoo = async (producto: IEditarProductoModelo, idPadreWoo: 
                 stock_quantity: stockProducto[0].stock,
                 tax_status: "taxable",
                 sku: productoCrm.codigo,
+                // image: {
+                //     src: colorProducto[0].url || undefined
+                // },
                 image: {
-                    src: colorProducto.url || undefined
+                    id: colorProducto[0].id_woo || undefined
                 },
+                gallery_image_ids: colorProducto.map((color)=>color.id_woo),
                 attributes: [
                     {
                         name: "Color",
-                        option: colorProducto.nombre_color
+                        option: colorProducto[0].nombre_color
                     },
                     {
                         name: "Talla",

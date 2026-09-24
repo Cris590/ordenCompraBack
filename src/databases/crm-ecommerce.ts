@@ -201,7 +201,7 @@ export const obtenerColorProductoPorCodigo = (codigoModelo:string, codigoColor:s
         .andWhere('codigo_color',codigoColor)
 }
 
-export const insertarImagenProductoColorCrm = async (data: { url:string, cod_producto_color:string }) => {
+export const insertarImagenProductoColorCrm = async (data: { url:string, cod_producto_color:string,id_woo?:number }) => {
   return dbCrm('producto_color_imagen').insert(data);
 }
 
@@ -328,7 +328,8 @@ export const obtenerProductosListadoCrm = (codigoModelo:string) => {
         })
         .join('categorias as c', 'c.id', 'p.id_categoria')
         .join('sub_categorias as sc', 'sc.id', 'p.id_sub_categoria')
-        .where('p.codigo_modelo', codigoModelo);
+        .where('p.codigo_modelo', codigoModelo)
+        .orderBy('p.color','p.talla');
 }
 
 

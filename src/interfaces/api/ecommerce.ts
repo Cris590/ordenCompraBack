@@ -41,8 +41,9 @@ export interface INuevaVariacionWoo {
     manage_stock?: boolean;
     stock_quantity?: number;
     image?: {
-        src: string;
+        id: number;
     };
+    gallery_image_ids?:number[],
     tax_status?: "taxable" | "shipping" | "none";
 
     attributes: {
@@ -164,8 +165,9 @@ export interface IActualizarVariacionWoo {
     stock_quantity?: number;
     status?: "publish" | "private";
     image?: {
-        src: string;
+        id: number;
     };
+    gallery_image_ids?:number[],
     attributes?: {
         name: string;
         option: string;

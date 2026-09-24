@@ -104,3 +104,47 @@ export const actualizarCategoriaWoo = async (
         throw e;
     }
 };
+
+
+export const obtenerProductoVariacion = async (
+    idProducto: number,
+    idVariacion: Partial<INuevaECategoria>
+): Promise<IRespuestaCreacionECategoria> => {
+
+    const url =`${WOOCOMERCE_URL}/products/${idProducto}/variations/${idVariacion}`;
+
+    try {
+
+        const { data } = await api.get<IRespuestaCreacionECategoria>(
+            `/products/${idProducto}/variations/${idVariacion}`
+        );
+
+        const log = {
+            url,
+            type: "get",
+            response: data
+        };
+
+        logIntegracionesEcommerce.info(
+            JSON.stringify(log)
+        );
+
+        return data;
+
+    } catch (e: any) {
+
+        const log = {
+            url,
+            type: "get",
+            response: e.response?.data ?? null,
+            status: e.response?.status ?? null,
+            error: e.message
+        };
+
+        logIntegracionesEcommerce.error(
+            JSON.stringify(log)
+        );
+
+        throw e;
+    }
+};
