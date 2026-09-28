@@ -489,22 +489,9 @@ export const obtenerUsuariosEntidad = async (req: Request, res: Response) => {
         let infoEntidad = await generalService.getTableInformation('entidad', 'cod_entidad', codEntidad)
 
         let usuariosEntidad = await entidadDao.getUsuariosIdentidad(codEntidad, infoEntidad[0].tipo_entrega_contrato)
-        let usuarios: any = []
-
-        if (infoEntidad[0].tipo_entrega_contrato == 2) {
-            for (const usuario of usuariosEntidad) {
-
-                let bonosEntregados = await entidadBonosDao.getUsuarioBonoEntrega(usuario.cod_usuario)
-                let redimido = bonosEntregados.filter((bono) => parseJson(bono.data_entrega).redimido == 0).length == 0
-                usuario.redimido = redimido
-                usuarios.push(usuario)
-            }
-        } else {
-            usuarios = usuariosEntidad
-        }
         res.send({
             error: 0,
-            usuarios,
+            usuarios: usuariosEntidad,
             gestionada: (infoEntidad.length > 0) ? infoEntidad[0].gestionada : 0
         })
 

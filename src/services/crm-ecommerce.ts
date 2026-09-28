@@ -1263,8 +1263,7 @@ export const obtenerDetallePedidoEcommerce = async (req: Request, res: Response)
         let productos = []
         for (const productoPedido of productosPedido) {
             const productoCrm = await crmEcommerceDao.obtenerProductoPedidoEcommerce(productoPedido.id_woo_variacion)
-            const imagenes = (productoCrm.cod_producto_color) ? await generalService.getTableInformationCrm('producto_color_imagen', 'cod_producto_color', productoCrm.cod_producto_color) : []
-
+            
             productos.push({
                 categoria: productoCrm.categoria,
                 sub_categoria: productoCrm.sub_categoria,
@@ -1277,7 +1276,6 @@ export const obtenerDetallePedidoEcommerce = async (req: Request, res: Response)
                 codigo_color: productoCrm.codigo_color,
                 color_rgb: productoCrm.color_rgb,
                 precio_crm: productoCrm.precio_venta,
-                imagenes: imagenes.map((imagen) => imagen.url),
                 cantidad: productoPedido.cantidad,
                 precio: productoPedido.precio,
                 descuento: productoPedido.descuento,

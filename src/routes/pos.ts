@@ -40,5 +40,5 @@ router.post('/entrada_salida_inventario/', posService.entradaSalidaInventario );
 router.post('/obtener_movimiento_inventarios/', posService.obtenerMovimientoInventarios );
 
 
-
+router.get('/imagenes_producto/:codigo', posService.imagenesProducto);
 

@@ -1154,20 +1154,10 @@ export const obtenerInventariosPos = async (req: any, res: Response) => {
             }
         }
 
-        const inventariosModificado:any = []
         const inventarios = await posDao.obtenerInventariosPos(filtros)
-        for (const producto of inventarios) {
-            const imagenes = (producto.cod_producto_color) ? await generalService.getTableInformationCrm('producto_color_imagen', 'cod_producto_color', producto.cod_producto_color) : []
-            inventariosModificado.push({
-                ...producto,
-                imagenes:imagenes.map((imagen) => imagen.url)
-            })
-
-        }
-
         res.send({
             error: 0,
-            inventarios: inventariosModificado
+            inventarios: inventarios
         })
 
     } catch (e: any) {
@@ -1498,3 +1488,25 @@ export const obtenerMovimientoInventarios = async (req: any, res: Response) => {
 
 }
 
+export const imagenesProducto = async (req: any, res: Response) => {
+    try {
+        const codigo = req.params.codigo;
+        const imagenes = await posDao.obtenerImagenesProducto(codigo)
+        res.send({
+            error: 0,
+            imagenes:imagenes.map((imagen)=>imagen.url)
+        })
+
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al obtener el inventario.'
+            }
+        })
+    }
+
+}

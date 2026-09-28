@@ -75,31 +75,62 @@ export const getUsuariosEntidadCorreo = (codEntidad: string | number): Promise<I
         .orderBy('u.cod_usuario', 'desc')
 }
 
-export const getUsuariosIdentidad = (codEntidad: string | number, tipoEntrega: string | number): Promise<IUsuarioEntidad[]> => {
-    let cod_perfil = 0
+export const getUsuariosIdentidad = (
+    codEntidad: string | number,
+    tipoEntrega: string | number
+): Promise<IUsuarioEntidad[]> => {
+
+    let cod_perfil = 0;
+
     switch (tipoEntrega) {
         case 1:
-            cod_perfil = 3
-            break;
-        case 2:
-            cod_perfil = 5
+            cod_perfil = 3;
             break;
 
-        default:
+        case 2:
+            cod_perfil = 5;
             break;
     }
 
     return db
-        .select('u.cod_usuario', 'u.codigo', 'u.email', 'u.nombre', 'u.activo', 'u.sexo', 'u.cedula', 'u.cod_cargo_entidad',
-            'o.cod_orden', db.raw("CONCAT(c.nombre, ' - LOTE ', c.lote) as cargo_entidad"))
+        .select(
+            'u.cod_usuario',
+            'u.codigo',
+            'u.email',
+            'u.nombre',
+            'u.activo',
+            'u.sexo',
+            'u.cedula',
+            'u.cod_cargo_entidad',
+            'o.cod_orden',
+            db.raw(`
+                CONCAT(c.nombre, ' - LOTE ', c.lote) AS cargo_entidad
+            `),
+            db.raw(`
+                NOT EXISTS (
+                    SELECT 1
+                    FROM usuario_bono_entrega AS ube
+                    WHERE ube.cod_usuario = u.cod_usuario
+                      AND JSON_EXTRACT(ube.data_entrega, '$.redimido') = 0
+                ) AS redimido
+            `)
+        )
         .from('usuario as u')
-        .join('cargo_entidad as c', 'c.cod_cargo_entidad', 'u.cod_cargo_entidad')
-        .leftJoin('orden as o', 'u.cod_usuario', 'o.cod_usuario')
+        .join(
+            'cargo_entidad as c',
+            'c.cod_cargo_entidad',
+            'u.cod_cargo_entidad'
+        )
+        .leftJoin(
+            'orden as o',
+            'u.cod_usuario',
+            'o.cod_usuario'
+        )
         .where('u.cod_entidad', codEntidad)
         .andWhere('u.cod_perfil', cod_perfil)
         .orderBy('u.activo')
-        .orderBy('u.cod_usuario', 'desc')
-}
+        .orderBy('u.cod_usuario', 'desc');
+};
 
 
 

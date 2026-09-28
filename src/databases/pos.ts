@@ -593,3 +593,20 @@ export const mostrarMovimientoInventarios= async (filtros: IFiltroLogInventarios
     }
     return await query.orderBy("lg.id_log_in_out", "desc");
 }
+
+
+export const obtenerImagenesProducto =  async (codigo:string) => {
+    return  dbCrm
+    .select('pci.url')
+    .from('productos as p')
+    .join('producto_color as pc', function () {
+        this.on('p.codigo_modelo', '=', 'pc.codigo_modelo')
+            .andOn('pc.codigo_color', '=', 'p.color');
+    })
+    .join(
+        'producto_color_imagen as pci',
+        'pc.cod_producto_color',
+        'pci.cod_producto_color'
+    )
+    .where('p.codigo', codigo);
+}
