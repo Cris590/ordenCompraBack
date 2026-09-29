@@ -22,7 +22,7 @@ export const procesarPedidoWooCommerce = async (req: Request, res: Response) => 
             })
         }
 
-        const validarPedidoCreado = await generalService.getTableInformation('ecommerce_pedidos','id_woocomerce', req.body.id)
+        const validarPedidoCreado = await generalService.getTableInformation('ecommerce_pedidos','id_woocommerce', req.body.id)
         if(validarPedidoCreado.length > 0 ){
             const log = {
                 cod_ecommerce_pedido: '',
@@ -199,7 +199,7 @@ export const actualizarPedidoWooCommerce = async (req: Request, res: Response) =
 
         console.log('---------- VAMOS A ACTUALIZAR ESTE PEDIDO ----------');
         
-        const validarPedidoCreado = await generalService.getTableInformation('ecommerce_pedidos','id_woocomerce', req.body.id)
+        const validarPedidoCreado = await generalService.getTableInformation('ecommerce_pedidos','id_woocommerce', req.body.id)
         if(validarPedidoCreado.length == 0 ){
             const log = {
                 cod_ecommerce_pedido: '',
