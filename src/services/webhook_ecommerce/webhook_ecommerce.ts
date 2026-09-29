@@ -16,10 +16,25 @@ const DEV = process.env.DEV || ''
 export const procesarPedidoWooCommerce = async (req: Request, res: Response) => {
     try {
         if(!req.body.id){
+            
             return res.send({
                 error:'No hay pedido Id'
             })
         }
+
+        const validarPedidoCreado = await generalService.getTableInformation('ecommerce_pedidos','id_woocomerce', req.body.id)
+        if(validarPedidoCreado.length > 0 ){
+            const log = {
+                cod_ecommerce_pedido: '',
+                tipo: 'creacion_pedido_error',
+                payload: JSON.stringify(req.body)
+            }
+            await webohookDao.guardarLogCreacionPedido(log)
+            return res.send({
+                error:'Ya existe un pedido con el ID ' + req.body.id
+            })
+        }
+
         const pedido = req.body as IOrdenWooCommerce
         const documentoFactura = pedido.meta_data.filter((meta: any) => meta.key == '_billing_document')[0].value
         const documentoEnvio = pedido.meta_data.filter((meta: any) => meta.key == '_shipping_document')[0].value
@@ -183,6 +198,20 @@ export const actualizarPedidoWooCommerce = async (req: Request, res: Response) =
     try {
 
         console.log('---------- VAMOS A ACTUALIZAR ESTE PEDIDO ----------');
+        
+        const validarPedidoCreado = await generalService.getTableInformation('ecommerce_pedidos','id_woocomerce', req.body.id)
+        if(validarPedidoCreado.length == 0 ){
+            const log = {
+                cod_ecommerce_pedido: '',
+                tipo: 'actualizacion_pedido_error',
+                payload: JSON.stringify(req.body)
+            }
+            await webohookDao.guardarLogCreacionPedido(log)
+            return res.send({
+                error:'No existe pedido con el ID ' + req.body.id
+            })
+        }
+        
 
         const pedido = req.body as IOrdenWooCommerce;
         const pedidoCreado = await webohookDao.validarPedidoCreado(pedido.id);

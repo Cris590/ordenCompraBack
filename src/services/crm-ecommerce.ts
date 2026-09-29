@@ -884,6 +884,7 @@ export const editarProductoCrm = async (req: Request, res: Response) => {
                     id_sub_categoria: producto.id_sub_categoria,
                     codigo: nuevoCodigo,
                     descripcion: producto.descripcion,
+                    descripcion_larga: producto.descripcion_larga,
                     precio_compra: producto.precio_compra,
                     precio_venta: producto.precio_venta,
                     activo: producto.activo,
@@ -928,6 +929,7 @@ export const editarProductoCrm = async (req: Request, res: Response) => {
                     id_sub_categoria: producto.id_sub_categoria,
                     codigo: nuevoCodigo,
                     descripcion: producto.descripcion,
+                    descripcion_larga: producto.descripcion_larga,
                     precio_compra: producto.precio_compra,
                     precio_venta: producto.precio_venta,
                     activo: producto.activo,
@@ -1019,12 +1021,13 @@ export const crearProductoCrm = async (req: Request, res: Response) => {
                     id_sub_categoria: producto.id_sub_categoria,
                     codigo: nuevoCodigo,
                     descripcion: producto.descripcion,
+                    descripcion_larga: producto.descripcion_larga,
                     precio_compra: producto.precio_compra,
                     precio_venta: producto.precio_venta,
                     activo: producto.activo,
                     cod_tallaje: producto.cod_tallaje,
                     talla,
-                    color
+                    color,
                 }
 
                 productosNuevos.push(nuevoProducto)
@@ -1082,6 +1085,7 @@ const crearProductoWoo = async (producto: IEditarProductoModelo) => {
 
         const nuevoProducto: INuevoEProductoWoo = {
             name: producto.descripcion,
+            description: producto.descripcion_larga,
             type: "variable",
             sku: producto.codigo_modelo,
             regular_price: String(producto.precio_venta),
@@ -1157,10 +1161,6 @@ const crearVariacionesWoo = async (producto: IEditarProductoModelo, idPadreWoo: 
                 manage_stock: true,
                 stock_quantity: stockProducto[0].stock,
                 tax_status: "taxable",
-                sku: productoCrm.codigo,
-                // image: {
-                //     src: colorProducto[0].url || undefined
-                // },
                 image: {
                     id: colorProducto[0].id_woo || undefined
                 },

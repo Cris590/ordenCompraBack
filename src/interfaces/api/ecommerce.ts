@@ -50,6 +50,7 @@ export interface INuevaVariacionWoo {
         name: string;
         option: string;
     }[];
+    description?:string
 }
 
 export interface IRespuestaCreacionEProducto {

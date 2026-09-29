@@ -65,6 +65,7 @@ export interface IEditarProductoModelo {
   cod_tallaje: number;
   nuevo_producto?:boolean;
   sincronizar_ecommerce?:boolean
+  descripcion_larga:string
 }
 
 export interface IProductoNuevoCrm {
@@ -72,6 +73,7 @@ export interface IProductoNuevoCrm {
   id_sub_categoria: number;
   codigo:string,
   descripcion:string,
+  descripcion_larga:string,
   precio_compra:number,
   precio_venta: number;
   activo: number;
