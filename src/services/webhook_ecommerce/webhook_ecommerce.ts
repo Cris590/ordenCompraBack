@@ -5,6 +5,7 @@ const fs = require("fs");
 import * as generalService from '../general'
 import * as webohookDao from '../../databases/webhook_ecommerce/webhook_ecommerce'
 import * as crmEcommerceDao from '../../databases/crm-ecommerce'
+import * as ecommerceIntegration from '../ecommerce/_index'
 
 // @ts-ignore
 import Handlebars from "handlebars";
@@ -224,11 +225,7 @@ export const actualizarPedidoWooCommerce = async (req: Request, res: Response) =
 
         const estadoPos = await generalService.getTableInformation('ecommerce_estado_pedido','estado_woocommerce',pedido.status)
         const nuevoEstadoPedidoCrm = estadoPos.length > 0 ? estadoPos[0].cod_ecommerce_estado_pedido : 0
-        // Actualizar estado del pedido si cambió
-        // if (pedidoCreado.cod_ecommerce_estado_pedido !== nuevoEstadoPedidoCrm) {
-        //     await webohookDao.actualizaEstadoPedidoEcommerce(pedidoCreado.cod_ecommerce_pedido,nuevoEstadoPedidoCrm);
-        // }
-
+        
         let nuevoSeguimiento:INuevoSeguimientoPedidoEcommerce = {
             cod_ecommerce_pedido:pedidoCreado.cod_ecommerce_pedido,
             cod_ecommerce_estado_pedido:nuevoEstadoPedidoCrm,

@@ -93,3 +93,19 @@ export const getFileBase64 = async (filePath: string, withoutType: boolean = fal
         })
     });
 }
+
+export const convertirAStringJson = (valor: any): string | null => {
+    if (valor === undefined || valor === null) {
+        return null;
+    }
+
+    if (typeof valor === "string") {
+        return valor;
+    }
+
+    try {
+        return JSON.stringify(valor);
+    } catch {
+        return null;
+    }
+};

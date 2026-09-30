@@ -187,3 +187,16 @@ export interface INuevoSeguimientoPedidoEcommerce{
     descripcion: string,
     inventario?: IAsignacionNuevoInventario[] | []
 }  
+
+
+export interface ILogIntegracionWoo {
+    servicio: string;
+    tipo: string;
+    url: string;
+    procesado:boolean;
+    request?: any;
+    response?: any;
+    status?: number | null;
+    error?: string | null;
+    
+}

@@ -2,14 +2,13 @@ import axios from "axios";
 import {
     IActualizarProductoWoo,
     IActualizarVariacionWoo,
-    INuevaECategoria,
     INuevaVariacionWoo,
     INuevoEProductoWoo,
-    IRespuestaCreacionECategoria,
     IRespuestaCreacionEProducto,
     IRespuestaCreacionEVariacion
 } from "../../interfaces/api/ecommerce";
 import { logIntegracionesEcommerce } from "../../helpers/logger";
+import { guardarLogIntegracionWoo } from "./general_ecommerce";
 
 const WOOCOMMERCE_URL = process.env.WOOCOMERCE_URL
 
@@ -29,7 +28,7 @@ export const crearProductoWoo = async (producto: INuevoEProductoWoo): Promise<IR
 
     try {
 
-        const { data } = await api.post<IRespuestaCreacionEProducto>(
+        const { data, status } = await api.post<IRespuestaCreacionEProducto>(
             "/products",
             producto
         );
@@ -40,6 +39,16 @@ export const crearProductoWoo = async (producto: INuevoEProductoWoo): Promise<IR
             request: producto,
             response: data
         };
+
+        await guardarLogIntegracionWoo({
+            servicio: "creacion_producto",
+            tipo: "POST",
+            url,
+            request: producto,
+            response: data,
+            status,
+            procesado: true
+        });
 
         logIntegracionesEcommerce.info(JSON.stringify(log));
 
@@ -58,6 +67,17 @@ export const crearProductoWoo = async (producto: INuevoEProductoWoo): Promise<IR
 
         logIntegracionesEcommerce.error(JSON.stringify(log));
 
+        await guardarLogIntegracionWoo({
+            servicio: "creacion_producto",
+            tipo: "POST",
+            url,
+            request: producto,
+            response: e.response?.data ?? null,
+            status: e.response?.status ?? null,
+            error: e.message,
+            procesado: false
+        });
+
         throw e;
     }
 };
@@ -72,7 +92,7 @@ export const crearVariacionWoo = async (
 
     try {
 
-        const { data } = await api.post<IRespuestaCreacionEVariacion>(
+        const { data, status } = await api.post<IRespuestaCreacionEVariacion>(
             `/products/${idProductoWoo}/variations`,
             variacion
         );
@@ -84,6 +104,16 @@ export const crearVariacionWoo = async (
             response: data
         };
 
+        await guardarLogIntegracionWoo({
+            servicio: "creacion_variacion_producto",
+            tipo: "POST",
+            url,
+            request: variacion,
+            response: data,
+            status,
+            procesado: true
+        });
+
         logIntegracionesEcommerce.info(
             JSON.stringify(log)
         );
@@ -105,6 +135,17 @@ export const crearVariacionWoo = async (
             JSON.stringify(log)
         );
 
+        await guardarLogIntegracionWoo({
+            servicio: "creacion_variacion_producto",
+            tipo: "POST",
+            url,
+            request: variacion,
+            response: e.response?.data ?? null,
+            status: e.response?.status ?? null,
+            error: e.message,
+            procesado: false
+        });
+
         throw e;
     }
 };
@@ -114,12 +155,12 @@ export const actualizarProductoWoo = async (
     idProductoWoo: number,
     producto: IActualizarProductoWoo
 ): Promise<IRespuestaCreacionEProducto> => {
-    
+
     const url = `${WOOCOMMERCE_URL}/products/${idProductoWoo}`;
 
     try {
 
-        const { data } = await api.put<IRespuestaCreacionEProducto>(
+        const { data, status } = await api.put<IRespuestaCreacionEProducto>(
             `/products/${idProductoWoo}`,
             producto
         );
@@ -131,13 +172,19 @@ export const actualizarProductoWoo = async (
             response: data
         };
 
-        console.log('------ Vamos a actualizar producto ------')
-        console.log(producto)
-        console.log(log)
-    
         logIntegracionesEcommerce.info(
             JSON.stringify(log)
         );
+
+        await guardarLogIntegracionWoo({
+            servicio: "actualizar_producto",
+            tipo: "PUT",
+            url,
+            request: producto,
+            response: data,
+            status,
+            procesado: true
+        });
 
         return data;
 
@@ -155,6 +202,17 @@ export const actualizarProductoWoo = async (
         logIntegracionesEcommerce.error(
             JSON.stringify(log)
         );
+
+        await guardarLogIntegracionWoo({
+            servicio: "actualizar_variacion",
+            tipo: "PUT",
+            url,
+            request: producto,
+            response: e.response?.data ?? null,
+            status: e.response?.status ?? null,
+            error: e.message,
+            procesado: false
+        });
 
         throw e;
     }
@@ -167,15 +225,24 @@ export const actualizarVariacionWoo = async (
     variacion: IActualizarVariacionWoo
 ): Promise<IRespuestaCreacionEVariacion> => {
 
-    const url =
-        `${WOOCOMMERCE_URL}/products/${idProductoWoo}/variations/${idVariacionWoo}`;
+    const url = `${WOOCOMMERCE_URL}/products/${idProductoWoo}/variations/${idVariacionWoo}`;
 
     try {
 
-        const { data } = await api.put<IRespuestaCreacionEVariacion>(
+        const { data, status } = await api.put<IRespuestaCreacionEVariacion>(
             `/products/${idProductoWoo}/variations/${idVariacionWoo}`,
             variacion
         );
+
+        await guardarLogIntegracionWoo({
+            servicio: "actualizar_variacion",
+            tipo: "PUT",
+            url,
+            request: variacion,
+            response: data,
+            status,
+            procesado: true
+        });
 
         const log = {
             url,
@@ -183,11 +250,6 @@ export const actualizarVariacionWoo = async (
             request: variacion,
             response: data
         };
-
-        
-        console.log('------ Vamos a actualizar variacion ------')
-        console.log(variacion)
-        console.log(log)
 
         logIntegracionesEcommerce.info(
             JSON.stringify(log)
@@ -197,6 +259,17 @@ export const actualizarVariacionWoo = async (
 
     } catch (e: any) {
 
+        await guardarLogIntegracionWoo({
+            servicio: "actualizar_variacion",
+            tipo: "PUT",
+            url,
+            request: variacion,
+            response: e.response?.data ?? null,
+            status: e.response?.status ?? null,
+            error: e.message,
+            procesado: false
+        });
+
         const log = {
             url,
             type: "put",
@@ -205,6 +278,7 @@ export const actualizarVariacionWoo = async (
             status: e.response?.status ?? null,
             error: e.message
         };
+
 
         logIntegracionesEcommerce.error(
             JSON.stringify(log)

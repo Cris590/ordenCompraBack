@@ -126,7 +126,7 @@ export const getBonosUsuarioRedencion = async (codUsuarios: number[]) => {
         .select(
             'ube.cod_usuario_bono_entrega',
             db.raw(`
-            CONCAT(u.codigo,'_',ce.lote,'_',cbp.nombre) AS codigo_bono
+            CONCAT(u.codigo,'_',ce.nombre,'_',cbp.nombre) AS codigo_bono
         `),
             'cbp.nombre',
             'cbp.descripcion',

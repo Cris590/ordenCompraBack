@@ -8,7 +8,7 @@ import * as posDao from '../databases/pos'
 import * as ecommerceIntegration from './ecommerce/_index'
 import { borrarArchivo, subirArchivo } from '../helpers/subir-archivo';
 import { FiltroBusquedaPedidosEcommerce, IEditarProductoModelo, INuevoSeguimientoPedidoEcommerce, IProductoNuevoCrm } from '../interfaces/crm-ecommerce';
-import { INuevaVariacionWoo, INuevoEProductoWoo, IRespuestaCreacionEProducto } from '../interfaces/api/ecommerce';
+import { INuevaVariacionWoo, INuevoEProductoWoo } from '../interfaces/api/ecommerce';
 import { createExcelFile } from '../helpers/crearExcel';
 import fs from 'fs';
 import path from 'path';
@@ -1325,12 +1325,33 @@ export const crearSeguimientoPedido = async (req: any, res: Response) => {
         const ESTADO_CANCELA_VENTA = process.env.ESTADO_REQUIERE_INVENTARIO ||  7;
         const codUsuario = req.auth.user.cod_usuario;
         const seguimiento = req.body as INuevoSeguimientoPedidoEcommerce
+
+        const {
+            estado_woocommerce,
+            id_woocommerce
+        } = await crmEcommerceDao.obtenerDetallePedidoEcommerce(String(seguimiento.cod_ecommerce_pedido))
+
+        const nuevoEstadoPos = await generalService.getTableInformation('ecommerce_estado_pedido','cod_ecommerce_estado_pedido',seguimiento.cod_ecommerce_estado_pedido)
+                
+        console.log('Estado anterior ', estado_woocommerce)
+        console.log('Estado nuevo ',nuevoEstadoPos[0].estado_woocommerce )
+
+        // Actualizar estado del pedido en woocomerce si cambió
+        if (estado_woocommerce !== nuevoEstadoPos[0].estado_woocommerce) {
+            await ecommerceIntegration.actualizarEstadoPedidoWoo(id_woocommerce,nuevoEstadoPos[0].estado_woocommerce)
+        }
+
+        
         await crmEcommerceDao.crearSeguimientoPedidoEcommerce({
             cod_ecommerce_pedido:seguimiento.cod_ecommerce_pedido,
             cod_ecommerce_estado_pedido: seguimiento.cod_ecommerce_estado_pedido,
             descripcion:seguimiento.descripcion
         })
 
+        
+        console.log('---------------')
+        console.log(ESTADO_REQUIERE_INVENTARIO)
+        console.log(seguimiento)
         // Acá se va modificar el inventario
         if(ESTADO_REQUIERE_INVENTARIO == seguimiento.cod_ecommerce_estado_pedido){
             if(seguimiento.inventario && seguimiento.inventario.length > 0){

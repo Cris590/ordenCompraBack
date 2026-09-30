@@ -87,6 +87,17 @@ export interface IRespuestaCreacionEProducto {
     variations: number[];
 }
 
+export interface IRespuestaActualizacionPedidoWoo {
+    id: number;
+    parent_id: number;
+    status: string;
+    currency: string;
+    total: string;
+    customer_id: number;
+    date_created: string;
+    date_modified: string;
+}
+
 export interface IRespuestaCreacionEVariacion {
     id: number;
     parent_id: number;

@@ -3,8 +3,9 @@ import Knex from 'knex';
 import config from '../../knexfile';
 import { logCrm, logDatabasePYS } from '../helpers/logger';
 import * as formatMessages from '../helpers/formatLogMessages';
-import { FiltroBusquedaPedidosEcommerce, IActualizarProductoColorCrm, IActualizarProductoCrm, ICrearProductoColorCrm, INuevoSeguimientoPedidoEcommerce, IProductoNuevoCrm } from '../interfaces/crm-ecommerce';
+import { FiltroBusquedaPedidosEcommerce, IActualizarProductoColorCrm, IActualizarProductoCrm, ICrearProductoColorCrm, ILogIntegracionWoo, INuevoSeguimientoPedidoEcommerce, IProductoNuevoCrm } from '../interfaces/crm-ecommerce';
 import { ITallaje } from '../interfaces/tallaje';
+import { convertirAStringJson } from '../helpers/general';
 
 const db = Knex(config.development);
 const dbCrm= Knex(config.crmbrt);
@@ -622,5 +623,21 @@ export const obtenerInventarioProductoBodegaActiva = (idProducto:number) => {
         .where('i.id_cod_producto', idProducto)
         .andWhere('b.inventario_ecommerce', 1)
         .andWhere('i.stock', '>', 0)
+}
+
+
+export const guardarLogIntegracionWooCommerce = (log: ILogIntegracionWoo) => {
+    return db("log_integracion_woocommerce").insert({
+        servicio: log.servicio,
+        tipo: log.tipo,
+        url: log.url,
+
+        request: convertirAStringJson(log.request),
+        response: convertirAStringJson(log.response),
+
+        status: log.status ?? null,
+        error: log.error ?? null,
+        procesado:log.procesado
+    });
 }
 

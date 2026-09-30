@@ -58,9 +58,10 @@ export const validarDireccionCliente = async (codCliente: number, direccion:IDir
 export const validarPedidoCreado = async (idWoo: number) => {
     
     return db
-      .select('*')
-      .from('ecommerce_pedidos')
-      .where('id_woocommerce',idWoo)
+      .select('p.*','ep.estado_woocommerce')
+      .from('ecommerce_pedidos as p')
+      .join('ecommerce_estado_pedido ep','p.cod_ecommerce_estado_pedido','ep.cod_ecommerce_estado_pedido')
+      .where('p.id_woocommerce',idWoo)
       .first()
 }
 
@@ -79,8 +80,4 @@ export const actualizaTransaccionEcommerce = async (codTransaction: number, data
     return db('ecommerce_transactions').where('cod_ecommerce_transaction', codTransaction).update(data)
 }
 
-export const actualizaEstadoPedidoEcommerce = async (codPedido: number, status:number) => {
-    
-    return db('ecommerce_pedidos').where('cod_ecommerce_pedido', codPedido).update({cod_ecommerce_estado_pedido:status})
-}
 
