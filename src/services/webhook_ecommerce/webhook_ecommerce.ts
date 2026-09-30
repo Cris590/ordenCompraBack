@@ -42,7 +42,7 @@ export const procesarPedidoWooCommerce = async (req: Request, res: Response) => 
 
         // Validar cliente 
         const clienteFactura = await validarClienteEcommerce(documentoFactura, pedido.billing)
-        const clienteEnvio = await validarClienteEcommerce(documentoEnvio, pedido.billing)
+        const clienteEnvio = await validarClienteEcommerce(documentoEnvio, pedido.shipping)
 
         const direccionFactura = await validarDireccionEcommerce(clienteFactura, pedido.billing)
         const direccionEnvio = await validarDireccionEcommerce(clienteEnvio, pedido.shipping)
