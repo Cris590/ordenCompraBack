@@ -45,4 +45,12 @@ router.get('/detalle_pedido_ecommerce/:cod_pedido', crmEcommerceService.obtenerD
 router.get('/obtener_inventario_pedido/:cod_pedido', crmEcommerceService.obtenerInventarioPedido);
 router.post('/crear_seguimiento_pedido/', crmEcommerceService.crearSeguimientoPedido);
 
+router.get('/obtener_inventario_ecommerce/', crmEcommerceService.obtenerInventarioEcommerce);
+router.get('/obtener_detalle_inventario_ecommerce/:codigo_modelo', crmEcommerceService.obtenerDetalleInventarioEcommerce);
+router.get('/sincronizar_inventario_ecommerce/:codigo_modelo', crmEcommerceService.sincronizarInventarioEcommerce);
+
+
+
+
+
 

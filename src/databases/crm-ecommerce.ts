@@ -641,3 +641,104 @@ export const guardarLogIntegracionWooCommerce = (log: ILogIntegracionWoo) => {
     });
 }
 
+export const obtenerInventarioEcommerce = () => {
+    return dbCrm('productos as p')
+        .innerJoin('categorias as c', 'c.id', 'p.id_categoria')
+        .innerJoin('sub_categorias as sc', 'sc.id', 'p.id_sub_categoria')
+        .leftJoin('inventarios as i', function () {
+            this.on('i.id_cod_producto', '=', 'p.id')
+                .andOn('i.stock', '>', dbCrm.raw('0'));
+        })
+        .leftJoin('bodegas as b', function () {
+            this.on('b.id', '=', 'i.id_tienda')
+                .andOn('b.inventario_ecommerce', '=', dbCrm.raw('1'));
+        })
+        .whereNotNull('p.id_woo_variante_producto')
+        .select(
+            'p.lote',
+            'p.codigo_modelo',
+            'p.id_categoria',
+            'c.categoria',
+            'p.id_sub_categoria',
+            'sc.sub_categoria',
+            'sc.id_woo as id_woo_subcategoria',
+            'p.descripcion',
+            dbCrm.raw('MIN(p.precio_compra) AS precio_compra'),
+            dbCrm.raw('MIN(p.precio_venta) AS precio_venta'),
+            dbCrm.raw('COUNT(DISTINCT p.color) AS total_colores'),
+            dbCrm.raw('COUNT(DISTINCT p.talla) AS total_tallas'),
+            dbCrm.raw(`
+                COALESCE(SUM(i.stock), 0) AS stock_ecommerce
+            `),
+            dbCrm.raw(`
+                CASE
+                    WHEN COALESCE(SUM(i.stock), 0) > 0 THEN 1
+                    ELSE 0
+                END AS tiene_stock
+            `)
+        )
+        .groupBy(
+            'p.lote',
+            'p.codigo_modelo',
+            'p.id_categoria',
+            'c.categoria',
+            'p.id_sub_categoria',
+            'sc.sub_categoria',
+            'sc.id_woo',
+            'p.descripcion'
+        )
+        .orderByRaw('MAX(p.id) DESC');
+};
+
+export const obtenerDetalleInventarioEcommerce = (
+    codigoModelo: string
+) => {
+    return dbCrm('productos as p')
+        .leftJoin('producto_color as pe', function () {
+            this.on('p.codigo_modelo', '=', 'pe.codigo_modelo')
+                .andOn('p.color', '=', 'pe.codigo_color');
+        })
+        .innerJoin('categorias as c', 'c.id', 'p.id_categoria')
+        .innerJoin(
+            'sub_categorias as sc',
+            'sc.id',
+            'p.id_sub_categoria'
+        )
+        .leftJoin(
+            'inventarios as i',
+            'i.id_cod_producto',
+            'p.id'
+        )
+        .leftJoin('bodegas as b', function () {
+            this.on('b.id', '=', 'i.id_tienda')
+                .andOn(
+                    'b.inventario_ecommerce',
+                    '=',
+                    dbCrm.raw('1')
+                );
+        })
+        .where('p.codigo_modelo', codigoModelo)
+        .whereNotNull('p.id_woo_variante_producto')
+        .select(
+            'c.categoria',
+            'sc.sub_categoria',
+            'p.codigo',
+            'p.descripcion',
+            'p.color',
+            'p.talla',
+            'pe.nombre_color',
+            'pe.codigo_color',
+            'pe.color as color_rgb',
+            'b.id as id_bodega',
+            'b.nombre as bodega',
+            dbCrm.raw(`
+                CASE
+                    WHEN COALESCE(i.stock, 0) > 0 THEN i.stock
+                    ELSE 0
+                END AS stock
+            `)
+        )
+        .orderBy('p.color', 'asc')
+        .orderBy('p.talla', 'asc')
+        .orderBy('b.nombre', 'asc');
+};

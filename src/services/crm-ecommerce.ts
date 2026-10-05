@@ -1137,7 +1137,7 @@ const crearProductoWoo = async (producto: IEditarProductoModelo) => {
 
         /**Crear variaciones */
 
-        const variacionesWoo = await crearVariacionesWoo(producto, idWooPadre)
+        const variacionesWoo = await crearVariacionesWoo(producto.codigo_modelo)
 
         return { variacionesWoo }
 
@@ -1146,17 +1146,29 @@ const crearProductoWoo = async (producto: IEditarProductoModelo) => {
     }
 }
 
-const crearVariacionesWoo = async (producto: IEditarProductoModelo, idPadreWoo: number) => {
+const crearVariacionesWoo = async (codigoModelo:string) => {
     try {
-        const productosCrm = await generalService.getTableInformationCrm('productos', 'codigo_modelo', producto.codigo_modelo)
-        const coloresProducto = await crmEcommerceDao.obtenerColorEImagenPorProducto(producto.codigo_modelo)
+        const productosCrm = await generalService.getTableInformationCrm('productos', 'codigo_modelo', codigoModelo)
+        const coloresProducto = await crmEcommerceDao.obtenerColorEImagenPorProducto(codigoModelo)
+        const idPadreWooArray = productosCrm.filter((producto)=>producto.id_woo_producto)
+        let idPadreWoo=0
+        if(idPadreWooArray.length > 0 ){
+            idPadreWoo = idPadreWooArray[0].id_woo_producto
+        }else{
+            return
+        }
 
+        if(productosCrm.some((producto)=>!producto.id_woo_producto)){
+             await crmEcommerceDao.actualizarProductoCrm(codigoModelo, { id_woo_producto: idPadreWoo })
+        }
+    
         for (const productoCrm of productosCrm) {
+        
             const colorProducto = coloresProducto.filter((color) => color.codigo_color === productoCrm.color)
             const stockProducto = await crmEcommerceDao.obtenerInventarioTotalProducto(productoCrm.id)
 
             const variacion: INuevaVariacionWoo = {
-                regular_price: String(producto.precio_venta),
+                regular_price: String(productoCrm.precio_venta),
                 sale_price: "",
                 manage_stock: true,
                 stock_quantity: stockProducto[0].stock,
@@ -1466,4 +1478,78 @@ export const obtenerInventarioPedido = async (req: Request, res: Response) => {
         });
     }
 };
+
+
+export const obtenerInventarioEcommerce = async (req: Request, res: Response) => {
+    try {
+        const data = await crmEcommerceDao.obtenerInventarioEcommerce()
+
+        res.send({ data, error:0 })
+
+    } catch (e: any) {
+
+        console.log('***********');
+        console.log(e);
+
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al obtener el detalle de los pedidos'
+            }
+        });
+    }
+};
+
+export const obtenerDetalleInventarioEcommerce = async (req: Request, res: Response) => {
+    try {
+        const codigoModelo = req.params.codigo_modelo
+        const data = await crmEcommerceDao.obtenerDetalleInventarioEcommerce(codigoModelo)
+
+        res.send({ data, error:0 })
+
+    } catch (e: any) {
+
+        console.log('***********');
+        console.log(e);
+
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al obtener el detalle de los pedidos'
+            }
+        });
+    }
+};
+
+
+export const sincronizarInventarioEcommerce = async (req: Request, res: Response) => {
+    try {
+        const codigoModelo = req.params.codigo_modelo
+        const variacionesWoo = await crearVariacionesWoo(codigoModelo)
+        
+        res.send({ 
+            error:0,
+            msg: {
+                icon: 'success',
+                text: 'Productos sincronizados correctamente'
+            } 
+        })
+
+    } catch (e: any) {
+
+        console.log('***********');
+        console.log(e);
+
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al sincronizar el producto'
+            }
+        });
+    }
+};
+
 
