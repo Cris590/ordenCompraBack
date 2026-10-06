@@ -102,19 +102,12 @@ export const consultarBonoUsuario = async (req: Request, res: Response) => {
 export const consultarEntidadesEntregaBonos = async (req: any, res: Response) => {
     try {
 
-        const entidadesUsuario = (req.auth.user.entidades) ? parseJson(req.auth.user.entidades) : []
-        const entidades = await generalService.getEntidadesEntregaBonos() as { cod_entidad: number, nombre: string }[]
-
-        let entidadesFiltradas = [] as { cod_entidad: number, nombre: string }[]
-        if (entidadesUsuario.length > 0) {
-            entidadesFiltradas = entidades.filter(ent => entidadesUsuario.includes(ent.cod_entidad));
-        }
-
-        console.log(entidades)
+        const codUsuario = (req.auth.user.cod_usuario) 
+        const entidades = await entidadBonosDao.getEntidadesReportesPorUsuario(codUsuario) as { cod_entidad: number, nombre: string }[]
 
         res.send({
             error: 0,
-            entidades: entidadesFiltradas
+            entidades
         })
 
     } catch (e: any) {
@@ -225,8 +218,14 @@ export const buscarBonosCedula = async (req: Request, res: Response) => {
         for (const usuario of usuariosAux) {
             const codUsuarios = usuario.cod_usuarios.split(',').map(Number);
             let bonosEntregados = await entidadBonosDao.getUsuarioBonoEntregaAgrupado(codUsuarios)
-            let redimido = bonosEntregados.filter((bono) => parseJson(bono.data_entrega).redimido == 0).length == 0
+            let redimido = bonosEntregados.filter((bono) => (parseJson(bono.data_entrega)).redimido == 0).length == 0
             usuario.redimido = redimido
+            usuario.bonos_entregados = bonosEntregados.map((bono)=>({
+                ...parseJson(bono.data_entrega), 
+                codigo:bono.codigo,
+                producto_cargo: bono.producto_cargo,
+                valor: bono.valor
+            }))
             usuarios.push(usuario)
         }
         res.send({
@@ -251,7 +250,21 @@ export const buscarBonosCedula = async (req: Request, res: Response) => {
 
 export const redimirBonosTienda = async (req: any, res: Response) => {
     try {
-        const codUsuario = req.auth.user.cod_usuario
+        
+         const {
+            bonos,
+            cambio,
+            cod_usuarios,
+            descuento,
+            impuesto,
+            metodos_pago,
+            productos,
+            subtotal,
+            total,
+            total_pagado,
+            vendedor
+        } = req.body
+        const codUsuario = vendedor
         const infoVendedor = await generalService.getTableInformation('vendedor', 'cod_usuario', codUsuario)
         if (infoVendedor.length == 0) {
             return res.send({
@@ -263,18 +276,7 @@ export const redimirBonosTienda = async (req: any, res: Response) => {
             })
         }
         const idTienda = infoVendedor[0].id_bodega
-        const {
-            bonos,
-            cambio,
-            cod_usuarios,
-            descuento,
-            impuesto,
-            metodos_pago,
-            productos,
-            subtotal,
-            total,
-            total_pagado
-        } = req.body
+       
 
         const bonosDisponibles = await entidadBonosDao.getBonosUsuarioRedencion(cod_usuarios)
         const bonosDisponiblesRedimirArray = bonosDisponibles.map((bono: any) => +bono.cod_usuario_bono_entrega)
@@ -332,7 +334,9 @@ export const redimirBonosTienda = async (req: any, res: Response) => {
 
         }
 
+        // Se pone acá ya que genera demora en el guarde, y finalmente no es vital para la redención
         await Promise.all(promesasActualizacionInventario)
+
         for (const bono of bonos) {
             
             const comentarioCierre = 'Rendecion de bono desde tienda negocio.'

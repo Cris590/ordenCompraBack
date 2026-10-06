@@ -115,9 +115,21 @@ export const getBonosUsuario = async (documento: string) => {
 
 export const getUsuarioBonoEntregaAgrupado = (codUsuarios: number[]) => {
     return db
-        .select('*')
-        .from('usuario_bono_entrega')
-        .whereIn('cod_usuario', codUsuarios)
+        .select('ube.*','u.codigo','cbp.nombre as producto_cargo','cbp.valor')
+        .from('usuario_bono_entrega as ube')
+        .join('usuario as u', 'u.cod_usuario', 'ube.cod_usuario')
+        .join(
+            'cargo_bonos_producto AS cbp',
+                db.raw(`
+                JSON_UNQUOTE(
+                    JSON_EXTRACT(
+                        ube.data_entrega,
+                        '$.cod_cargo_bonos_producto'
+                    )
+                ) = cbp.cod_cargo_bonos_producto
+            `)
+        )
+        .whereIn('ube.cod_usuario', codUsuarios)
 }
 
 
@@ -179,4 +191,15 @@ export const geInfoClienteRendecion = async (codUsuario: number) => {
 
 export const crearRedencionVenta = async (redencion: any) => {
     return db('redencion_bono_tienda').insert(redencion);
+}
+
+export const getEntidadesReportesPorUsuario = async (codUsuario: number) => {
+    return await db('usuario_bono_entrega as ube')
+    .distinct('ube.cod_entidad', 'e.nombre')
+    .join('entidad as e', 'ube.cod_entidad', 'e.cod_entidad')
+    .whereRaw("JSON_EXTRACT(ube.data_entrega, '$.redimido') = 1")
+    .whereRaw(
+        "JSON_EXTRACT(ube.data_entrega, '$.cod_usuario') = ?",
+        [codUsuario]
+    );
 }
