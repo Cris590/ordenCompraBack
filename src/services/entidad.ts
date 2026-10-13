@@ -460,7 +460,7 @@ const limpiarUsuario = async (usuarioEntidad: IUsuarioCarga, codEntidad: number,
         if (!usuarioLimpio) return usuarioLimpio
 
         // Si existe usuario devuelvalo
-        const existeUsuario = await userDao.getUserCode(usuarioLimpio.cedula!, usuarioLimpio.codigo!)
+        const existeUsuario = await userDao.getUserCode(usuarioLimpio.cedula!.trim(), usuarioLimpio.codigo!.trim())
         console.log('-------------')
         console.log(existeUsuario)
         if (existeUsuario) return null
@@ -537,6 +537,18 @@ export const obtenerUsuarioCoordinadorEntidad = async (req: Request, res: Respon
 export const crearUsuarioEntidad = async (req: Request, res: Response) => {
     try {
         let user = req.body as IUser
+        
+        const existeUsuario = await userDao.getUserCode(user.cedula!.trim(), user.codigo!.trim())
+        if(existeUsuario){
+            return  res.send({
+                    error: 1,
+                    msg: {
+                        icon: 'error',
+                        text: 'No puede asignar el código ' + user['codigo'] + ' a la cédula ' + user.cedula + ' porque ya está siendo usada esta combinación.' 
+                    }
+                })
+        }
+
         let usuarioNuevo = await userService.createUser(user)
         await crearUsuarioBono(usuarioNuevo.createdUser, user.cod_entidad!)
 
@@ -603,16 +615,31 @@ export const editarUsuarioEntidad = async (req: Request, res: Response) => {
         const { codUsuario } = req.params
         let usuario: IUser = req.body
 
-        const keysValidas = ['cedula', 'email', 'nombre', 'password','activo']
+        const keysValidas = ['cedula', 'email', 'nombre', 'password','activo','codigo']
 
         Object.keys(usuario).forEach((key) => {
             if (!keysValidas.includes(key)) {
                 delete usuario[key as keyof IUser];
             }
         });
+        const usuarioCreado = await generalService.getTableInformation('usuario','cod_usuario',codUsuario)
+        if(usuarioCreado.length > 0 && usuario['codigo']){
+            if(usuarioCreado[0].codigo.trim() !== usuario['codigo']){
+                const existeUsuario = await userDao.getUserCode(usuario.cedula!.trim(), usuario.codigo!.trim())
+                if(existeUsuario){
+                    return  res.send({
+                        error: 1,
+                        msg: {
+                            icon: 'error',
+                            text: 'No puede asignar el código ' + usuario['codigo'] + ' a la cédula ' + usuario.cedula + ' porque ya está siendo usada esta combinación.' 
+                        }
+                    })
+               }
 
-        console.log('-------->', usuario)
-
+            }
+            
+        }
+        
         await userService.editUser(usuario, +codUsuario)
         res.send({
             error: 0,
