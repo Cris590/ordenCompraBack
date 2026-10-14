@@ -103,7 +103,7 @@ export const obtenerVentasPOS = async (filtros: IFiltrosVentasPOS) => {
             'v.neto',
             'v.total',
             'v.metodo_pago',
-            'v.fecha',
+            dbCrm.raw('DATE_SUB(v.fecha, INTERVAL 5 HOUR) as fecha'),
             'v.factura_valida',
             'v.fc',
             'v.productos'
@@ -113,10 +113,9 @@ export const obtenerVentasPOS = async (filtros: IFiltrosVentasPOS) => {
         .join('usuarios as u', 'v.id_vendedor', 'u.id')
         .join('bodegas as b', 'v.id_tienda', 'b.id')
         .where('v.deuda', '<=', 0)
-        .andWhere('v.factura_valida',1)
+        .andWhere('v.factura_valida', 1)
         .modify((query) => {
 
-            // Si la tienda es "Todas", no se aplica este filtro
             if (
                 filtros.id_tienda &&
                 filtros.id_tienda !== 'todas'
@@ -124,19 +123,16 @@ export const obtenerVentasPOS = async (filtros: IFiltrosVentasPOS) => {
                 query.where('v.id_tienda', filtros.id_tienda);
             }
 
-            // Documento del cliente
             if (filtros.documento_cliente) {
                 query.where('c.documento', filtros.documento_cliente);
             }
 
-            // Fecha inicial
             if (filtros.fecha_inicial) {
-                query.where('v.fecha', '>=', `${filtros.fecha_inicial} 00:00:00`);
+                query.where('v.fecha','>=',dbCrm.raw('DATE_ADD(?, INTERVAL 5 HOUR)',[`${filtros.fecha_inicial} 00:00:00`]) );
             }
 
-            // Fecha final
             if (filtros.fecha_final) {
-                query.where('v.fecha', '<=', `${filtros.fecha_final} 23:59:59`);
+                query.where('v.fecha','<=', dbCrm.raw('DATE_ADD(?, INTERVAL 5 HOUR)', [`${filtros.fecha_final} 23:59:59`]) );
             }
         })
         .orderBy('v.fecha', 'desc');
@@ -158,7 +154,7 @@ export const obtenerVentasPendientesPOS = async (filtros: IFiltrosVentasPOS) => 
             'v.neto',
             'v.total',
             'v.metodo_pago',
-            'v.fecha',
+            dbCrm.raw('DATE_SUB(v.fecha, INTERVAL 5 HOUR) as fecha'),
             'v.factura_valida',
             'v.fc',
             'v.productos',
@@ -186,12 +182,11 @@ export const obtenerVentasPendientesPOS = async (filtros: IFiltrosVentasPOS) => 
 
             // Fecha inicial
             if (filtros.fecha_inicial) {
-                query.where('v.fecha', '>=', `${filtros.fecha_inicial} 00:00:00`);
+                query.where('v.fecha','>=',dbCrm.raw('DATE_ADD(?, INTERVAL 5 HOUR)',[`${filtros.fecha_inicial} 00:00:00`]) );
             }
 
-            // Fecha final
             if (filtros.fecha_final) {
-                query.where('v.fecha', '<=', `${filtros.fecha_final} 23:59:59`);
+                query.where('v.fecha','<=', dbCrm.raw('DATE_ADD(?, INTERVAL 5 HOUR)', [`${filtros.fecha_final} 23:59:59`]) );
             }
         })
         .orderBy('v.fecha', 'desc');
@@ -203,7 +198,6 @@ export const obtenerVentaDetalle = (idVenta: number) => {
         .select(
             "v.id",
             "v.codigo",
-
             "v.id_cliente",
             "c.documento as documento_cliente",
             "c.nombre as cliente",
@@ -225,7 +219,7 @@ export const obtenerVentaDetalle = (idVenta: number) => {
 
             "v.neto",
             "v.total",
-            "v.fecha",
+            dbCrm.raw('DATE_SUB(v.fecha, INTERVAL 5 HOUR) as fecha'),
 
             "v.factura_valida",
             "v.fc",
@@ -475,7 +469,7 @@ export const mostrarLogTransferencia = async (filtros: IFiltroTrasladosProductos
             "lg.stock",
             "b1.nombre as bodega_entrada",
             "b2.nombre as bodega_salida",
-            "lg.fecha"
+            dbCrm.raw('DATE_SUB(lg.fecha, INTERVAL 5 HOUR) as fecha'),
         )
         .join("productos as p", "p.id", "lg.id_cod_producto")
         .leftJoin("usuarios as u", "u.id", "lg.id_usuario")
@@ -486,23 +480,14 @@ export const mostrarLogTransferencia = async (filtros: IFiltroTrasladosProductos
                 .andOn('p.color', '=', 'pe.codigo_color');
         });
 
-    // Fecha inicial
     if (filtros.fecha_inicial) {
-        query.where(
-            "lg.fecha",
-            ">=",
-            `${filtros.fecha_inicial} 00:00:00`
-        );
+        query.where('lg.fecha','>=',dbCrm.raw('DATE_ADD(?, INTERVAL 5 HOUR)',[`${filtros.fecha_inicial} 00:00:00`]) );
     }
 
-    // Fecha final
     if (filtros.fecha_final) {
-        query.where(
-            "lg.fecha",
-            "<=",
-            `${filtros.fecha_final} 23:59:59`
-        );
+        query.where('lg.fecha','<=', dbCrm.raw('DATE_ADD(?, INTERVAL 5 HOUR)', [`${filtros.fecha_final} 23:59:59`]) );
     }
+
 
     // Bodega salida
     if (filtros.id_bodega_salida?.length) {
@@ -561,27 +546,17 @@ export const mostrarMovimientoInventarios= async (filtros: IFiltroLogInventarios
             "u.nombre as usuario",
             "lg.id_usuario",
             "lg.comentario",
-            "lg.fecha"
+            dbCrm.raw('DATE_SUB(lg.fecha, INTERVAL 5 HOUR) as fecha'),
         )
         .leftJoin("usuarios as u", "u.id", "lg.id_usuario")
         .join("bodegas as b", "b.id", "lg.id_tienda")
 
-    // Fecha inicial
     if (filtros.fecha_inicial) {
-        query.where(
-            "lg.fecha",
-            ">=",
-            `${filtros.fecha_inicial} 00:00:00`
-        );
+        query.where('lg.fecha','>=',dbCrm.raw('DATE_ADD(?, INTERVAL 5 HOUR)',[`${filtros.fecha_inicial} 00:00:00`]) );
     }
 
-    // Fecha final
     if (filtros.fecha_final) {
-        query.where(
-            "lg.fecha",
-            "<=",
-            `${filtros.fecha_final} 23:59:59`
-        );
+        query.where('lg.fecha','<=', dbCrm.raw('DATE_ADD(?, INTERVAL 5 HOUR)', [`${filtros.fecha_final} 23:59:59`]) );
     }
 
     // Bodega salida
