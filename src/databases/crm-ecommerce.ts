@@ -108,7 +108,7 @@ export const obtenerProductosCrm = ({page, perPage, buscar, idCategoria,idSubCat
             this.where('p.descripcion', 'like', `%${buscar}%`)
                 .orWhere('p.codigo', 'like', `%${buscar}%`)
                 .orWhere('p.lote', 'like', `%${buscar}%`)
-                .orWhere('p.codigo_modelo', 'like', `%${buscar}%`);;
+                .orWhere('p.codigo_modelo', 'like', `%${buscar}%`);
         });
     }
 
@@ -139,6 +139,7 @@ export const obtenerProductosCrm = ({page, perPage, buscar, idCategoria,idSubCat
                 ) AS codigo_auxiliar
             `),
             'p.descripcion',
+            'p.activo',
             dbCrm.raw('MIN(p.precio_compra) AS precio_compra'),
             dbCrm.raw('MIN(p.precio_venta) AS precio_venta'),
             dbCrm.raw('COUNT(DISTINCT p.color) AS total_colores'),
@@ -153,6 +154,7 @@ export const obtenerProductosCrm = ({page, perPage, buscar, idCategoria,idSubCat
             'p.descripcion'
         )
         .orderByRaw('MAX(p.id) DESC')
+        .orderBy('p.activo','asc')
         .limit(perPage)
         .offset(offset);
 }
@@ -640,6 +642,21 @@ export const guardarLogIntegracionWooCommerce = (log: ILogIntegracionWoo) => {
         procesado:log.procesado
     });
 }
+export const validarTotalInventarioCodigoModelo = async (codigoModelo:string) => {
+    const resultado = await dbCrm('inventarios as i')
+        .join('productos as p', 'i.id_cod_producto', 'p.id')
+        .where('p.codigo_modelo', codigoModelo)
+        .andWhere('i.stock','>',0)
+        .sum('i.stock as stock')
+        .first();
+
+    return resultado?.stock ?? 0;
+}
+
+export const toogleActivarProductosCrm = (codigoModelo:string, activo:boolean) => {
+    return dbCrm('productos').where('codigo_modelo', codigoModelo).update({activo})
+}
+
 
 export const obtenerInventarioEcommerce = () => {
     return dbCrm('productos as p')
@@ -690,9 +707,7 @@ export const obtenerInventarioEcommerce = () => {
         .orderByRaw('MAX(p.id) DESC');
 };
 
-export const obtenerDetalleInventarioEcommerce = (
-    codigoModelo: string
-) => {
+export const obtenerDetalleInventarioEcommerce = (codigoModelo: string) => {
     return dbCrm('productos as p')
         .leftJoin('producto_color as pe', function () {
             this.on('p.codigo_modelo', '=', 'pe.codigo_modelo')
@@ -742,3 +757,4 @@ export const obtenerDetalleInventarioEcommerce = (
         .orderBy('p.talla', 'asc')
         .orderBy('b.nombre', 'asc');
 };
+

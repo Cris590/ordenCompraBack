@@ -1553,3 +1553,65 @@ export const sincronizarInventarioEcommerce = async (req: Request, res: Response
 };
 
 
+export const inactivarProductosCrm = async (req: Request, res: Response) => {
+    try {
+        const codigoModelo = req.params.codigo_modelo
+        const stockTotal = await crmEcommerceDao.validarTotalInventarioCodigoModelo(codigoModelo)
+        if(stockTotal > 0){
+            return res.send({
+                error: 1,
+                msg: {
+                    icon: 'error',
+                    text: 'No puede desactivar este producto ya que tiene inventario habilitado. Solo se puede inhabilitar si no existe inventario de estos productos.'
+                }
+            })
+        }
+
+        await crmEcommerceDao.toogleActivarProductosCrm(codigoModelo, false)
+        res.send({
+            error: 0,
+            msg: {
+                icon: 'success',
+                text: 'Productos inactivados'
+            }
+        });
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al obtener los productos, comuniquese con el administrador.'
+            }
+        })
+    }
+
+}
+
+export const activarProductosCrm = async (req: Request, res: Response) => {
+    try {
+        const codigoModelo = req.params.codigo_modelo
+        
+
+        await crmEcommerceDao.toogleActivarProductosCrm(codigoModelo, true)
+        res.send({
+            error: 0,
+            msg: {
+                icon: 'success',
+                text: 'Productos activados correctamente.'
+            }
+        });
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al obtener los productos, comuniquese con el administrador'
+            }
+        })
+    }
+
+}

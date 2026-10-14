@@ -385,6 +385,7 @@ export const obtenerInventariosPos = async (filtros: {id_tienda: number[];codigo
             this.on('p.codigo_modelo', '=', 'pe.codigo_modelo')
                 .andOn('p.color', '=', 'pe.codigo_color');
         })
+        .where('p.activo',1)
 
     if (!validarSinFiltro) {
         query.whereIn('i.id_tienda', filtros.id_tienda);
