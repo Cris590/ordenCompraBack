@@ -311,9 +311,12 @@ export const reporteBonosEntregados = async (request: any, res: Response) => {
 
         console.log('------------------')
         console.log(codEntidad)
-        console.log(request.auth.user.cod_usuario)
+        console.log(request.auth.user)
 
-        let usuarios = await ordenCompraDao.obtenerReporteBonosRedimidos(+codUsuario, codEntidad)
+        const PERFIL_VENDEDOR=8
+        const codPerfil = request.auth.user.cod_perfil
+        const buscarPorTienda = PERFIL_VENDEDOR == codPerfil
+        let usuarios = await ordenCompraDao.obtenerReporteBonosRedimidos(+codUsuario, codEntidad, buscarPorTienda)
 
         res.send({
             error: 0,

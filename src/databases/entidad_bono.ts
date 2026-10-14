@@ -193,13 +193,53 @@ export const crearRedencionVenta = async (redencion: any) => {
     return db('redencion_bono_tienda').insert(redencion);
 }
 
-export const getEntidadesReportesPorUsuario = async (codUsuario: number) => {
+export const getEntidadesReportesPorUsuario = async ( codUsuario: number,buscarTienda?: boolean) => {
     return await db('usuario_bono_entrega as ube')
-    .distinct('ube.cod_entidad', 'e.nombre')
-    .join('entidad as e', 'ube.cod_entidad', 'e.cod_entidad')
-    .whereRaw("JSON_EXTRACT(ube.data_entrega, '$.redimido') = 1")
-    .whereRaw(
-        "JSON_EXTRACT(ube.data_entrega, '$.cod_usuario') = ?",
-        [codUsuario]
-    );
-}
+        .distinct('ube.cod_entidad', 'e.nombre')
+        .join('entidad as e', 'ube.cod_entidad', 'e.cod_entidad')
+        .whereRaw("JSON_EXTRACT(ube.data_entrega, '$.redimido') = 1")
+        .modify((query) => {
+            if (buscarTienda) {
+                query.andWhere(function () {
+                    // Existe id_tienda: validar mediante vendedor y su bodega.
+                    this.whereExists(function () {
+                        this.select(db.raw('1'))
+                            .from('vendedor as v')
+                            .where('v.cod_usuario', codUsuario)
+                            .whereRaw(
+                                `v.id_bodega = CAST(
+                                    JSON_UNQUOTE(
+                                        JSON_EXTRACT(ube.data_entrega, '$.id_tienda')
+                                    ) AS UNSIGNED
+                                )`
+                            )
+                            .whereRaw(
+                                `JSON_CONTAINS_PATH(
+                                    ube.data_entrega,
+                                    'one',
+                                    '$.id_tienda'
+                                ) = 1`
+                            );
+                    })
+                    // No existe id_tienda: mantener el filtro original.
+                    .orWhere(function () {
+                        this.whereRaw(
+                            `JSON_CONTAINS_PATH(
+                                ube.data_entrega,
+                                'one',
+                                '$.id_tienda'
+                            ) = 0`
+                        ).andWhereRaw(
+                            "JSON_EXTRACT(ube.data_entrega, '$.cod_usuario') = ?",
+                            [codUsuario]
+                        );
+                    });
+                });
+            } else {
+                query.andWhereRaw(
+                    "JSON_EXTRACT(ube.data_entrega, '$.cod_usuario') = ?",
+                    [codUsuario]
+                );
+            }
+        });
+};

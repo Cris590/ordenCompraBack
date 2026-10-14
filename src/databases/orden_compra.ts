@@ -128,7 +128,12 @@ export const obtenerUsuariosCoordinador = (codEntidad: number): Promise<any[]> =
         .orderBy('u.cod_usuario', 'desc')
 }
 
-export const obtenerReporteBonosRedimidos = (codUsuario: number, codEntidad:number): Promise<any[]> => {
+
+export const obtenerReporteBonosRedimidos = (
+    codUsuario: number,
+    codEntidad: number,
+    buscarTienda?: boolean
+): Promise<any[]> => {
     return db('usuario_bono_entrega as ube')
         .select(
             db.raw(`JSON_UNQUOTE(JSON_EXTRACT(ube.data_entrega, '$.fecha_redimido')) as fecha_redimido`),
@@ -146,31 +151,38 @@ export const obtenerReporteBonosRedimidos = (codUsuario: number, codEntidad:numb
             'e.no_contrato'
         )
         .leftJoin('usuario as u', function () {
-            this.on(
-                'u.cod_usuario',
-                '=',
-                db.raw(`JSON_UNQUOTE(JSON_EXTRACT(ube.data_entrega, '$.cod_usuario'))`)
-            );
+            this.on('u.cod_usuario','=',db.raw(`JSON_UNQUOTE(JSON_EXTRACT(ube.data_entrega, '$.cod_usuario'))`));
         })
         .leftJoin('entidad as e', 'u.cod_entidad', 'e.cod_entidad')
         .leftJoin('usuario as u2', 'u2.cod_usuario', 'ube.cod_usuario')
         .leftJoin('cargo_bonos_producto as cbp', function () {
-            this.on(
-                'cbp.cod_cargo_bonos_producto',
-                '=',
-                db.raw(`JSON_UNQUOTE(JSON_EXTRACT(ube.data_entrega, '$.cod_cargo_bonos_producto'))`)
-            );
+            this.on('cbp.cod_cargo_bonos_producto','=', db.raw(`JSON_UNQUOTE(JSON_EXTRACT(ube.data_entrega, '$.cod_cargo_bonos_producto'))`));
         })
-        .where(
-            db.raw(`JSON_UNQUOTE(JSON_EXTRACT(ube.data_entrega, '$.redimido'))`),
-            '=',
-            '1'
-        )
-        .andWhere('u.cod_usuario', codUsuario)
-        .andWhere('ube.cod_entidad',codEntidad)
-        .orderBy('fecha_redimido','desc');
-
-}
+        .where(db.raw(`JSON_UNQUOTE(JSON_EXTRACT(ube.data_entrega, '$.redimido'))`),'=','1')
+        .andWhere('ube.cod_entidad', codEntidad)
+        .modify((query) => {
+            if (buscarTienda) {
+                query.andWhere(function () {
+                    // Si existe id_tienda, validar el vendedor asociado a esa bodega.
+                    this.whereExists(function () {
+                        this.select(db.raw('1'))
+                            .from('vendedor as v')
+                            .where('v.cod_usuario', codUsuario)
+                            .whereRaw(`v.id_bodega = CAST(JSON_UNQUOTE(JSON_EXTRACT(ube.data_entrega, '$.id_tienda')) AS UNSIGNED)`)
+                            .whereRaw(`JSON_EXTRACT(ube.data_entrega, '$.id_tienda') IS NOT NULL`);
+                    })
+                    // Si no existe id_tienda, conservar el filtro original.
+                    .orWhere(function () {
+                        this.whereRaw(`JSON_EXTRACT(ube.data_entrega, '$.id_tienda') IS NULL`)
+                        .andWhere('u.cod_usuario', codUsuario);
+                    });
+                });
+            } else {
+                query.andWhere('u.cod_usuario', codUsuario);
+            }
+        })
+        .orderBy('fecha_redimido', 'desc');
+};
 
 
 export const obtenerReporteBonosRedimidosTotalEntidad = (codEntidad: number): Promise<any[]> => {

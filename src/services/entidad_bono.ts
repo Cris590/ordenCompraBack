@@ -102,8 +102,12 @@ export const consultarBonoUsuario = async (req: Request, res: Response) => {
 export const consultarEntidadesEntregaBonos = async (req: any, res: Response) => {
     try {
 
-        const codUsuario = (req.auth.user.cod_usuario) 
-        const entidades = await entidadBonosDao.getEntidadesReportesPorUsuario(codUsuario) as { cod_entidad: number, nombre: string }[]
+        const codUsuario = (req.auth.user.cod_usuario)
+        const PERFIL_VENDEDOR=8
+        const codPerfil = req.auth.user.cod_perfil
+        const buscarPorTienda = PERFIL_VENDEDOR == codPerfil
+
+        const entidades = await entidadBonosDao.getEntidadesReportesPorUsuario(codUsuario,buscarPorTienda) as { cod_entidad: number, nombre: string }[]
 
         res.send({
             error: 0,
@@ -356,6 +360,7 @@ export const redimirBonosTienda = async (req: any, res: Response) => {
                 cedula_vendedor: infoUsuario[0].cedula,
                 nombre_vendedor: infoUsuario[0].nombre,
                 tienda:infoTienda[0].nombre,
+                id_tienda:idTienda,
                 cod_usuario:codUsuario
             }
 
