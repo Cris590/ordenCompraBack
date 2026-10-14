@@ -21,7 +21,7 @@ import { parseJson } from '../utils/parseJson';
 export const obtenerMediosPago = async (req: Request, res: Response) => {
     try {
         const metodosPago = await generalService.getTableInformationCrm('metodos_pago', 'activo', 1)
-        const metodosPagoModificado = metodosPago.map((metodoPago)=>({
+        const metodosPagoModificado = metodosPago.map((metodoPago) => ({
             ...metodoPago,
             necesita_codigo: metodoPago.codigo
         }))
@@ -160,13 +160,13 @@ export const obtenerVendedoresPorTienda = async (req: any, res: Response) => {
         const vendedores = await posDao.obtenerVendedoresPorTienda(codUsuario)
         const bodega = await generalService.getTableInformationCrm('bodegas', 'id', vendedores[0].id_bodega)
 
-    
+
         const { idVenta } = req.params;
-        let codigoVenta 
-        if(idVenta){
+        let codigoVenta
+        if (idVenta) {
             const venta = await generalService.getTableInformationCrm('ventas', 'id', idVenta)
             codigoVenta = venta[0].codigo
-        }else{
+        } else {
             const ultimaCompra = await posDao.obtenerUltimaCompra(vendedores[0].id_bodega)
             codigoVenta = ultimaCompra ? +ultimaCompra.codigo + 1 : 0
         }
@@ -638,7 +638,7 @@ export const obtenerVentaDetalle = async (req: any, res: Response) => {
             venta.metodo_pago = [];
         }
 
-        venta.total_sin_descuento = (venta.neto * 100 ) / ( 100 - venta.descuento)*( 1 + venta.impuesto / venta.neto)
+        venta.total_sin_descuento = (venta.neto * 100) / (100 - venta.descuento) * (1 + venta.impuesto / venta.neto)
         venta.total_productos = productosModificados.length
 
         res.send({
@@ -1203,18 +1203,18 @@ export const busquedaInventarioCodigo = async (req: any, res: Response) => {
         const codigo = req.params.codigo;
         const inventarios = await posDao.obtenerInventariosPos({ codigo, id_tienda: [] }, true)
 
-        let inventariosModificado:any = []
+        let inventariosModificado: any = []
         for (const producto of inventarios) {
             const imagenes = (producto.cod_producto_color) ? await generalService.getTableInformationCrm('producto_color_imagen', 'cod_producto_color', producto.cod_producto_color) : []
             inventariosModificado.push({
                 ...producto,
-                imagenes:imagenes.map((imagen) => imagen.url)
+                imagenes: imagenes.map((imagen) => imagen.url)
             })
 
         }
         res.send({
             error: 0,
-            inventarios:inventariosModificado
+            inventarios: inventariosModificado
         })
 
     } catch (e: any) {
@@ -1430,43 +1430,63 @@ export const entradaSalidaInventario = async (req: any, res: Response) => {
 export const obtenerMovimientoInventarios = async (req: any, res: Response) => {
     try {
         const filtro = req.body
-        let movimientos = await posDao.mostrarMovimientoInventarios(filtro)
+        const movimientos = await posDao.mostrarMovimientoInventarios(filtro);
 
-        let movimientosAcumulados: any = []
-        for (const movimiento of movimientos) {
-            let usuarioNombre = movimiento.usuario
-            if (!movimiento.usuario) {
-                const usuarioCrm = await generalService.getTableInformation('usuario', 'cod_usuario', movimiento.id_usuario)
-                if (usuarioCrm.length > 0) {
-                    usuarioNombre = usuarioCrm[0].nombre
-                }
-            }
+        // Parsear productos
+        const movimientosParseados = movimientos.map(movimiento => ({
+            ...movimiento,
+            productos: parseJson(movimiento.productos)
+        }));
 
-            let produtosAux: any = []
-            for (const producto of parseJson(movimiento.productos)) {
-                const productoDetalle = await generalService.getTableInformationCrm('productos', 'id', producto.id)
-                const productoAux = {
+        // Obtener IDs únicos de productos
+        const idsProductos = [
+            ...new Set(
+                movimientosParseados.flatMap(m =>
+                    m.productos.map((p: any) => p.id)
+                )
+            )
+        ];
+
+        // Obtener usuarios que no tienen nombre en el movimiento
+        const codigosUsuarios = [
+            ...new Set(
+                movimientosParseados
+                    .filter(m => !m.usuario && m.id_usuario)
+                    .map(m => m.id_usuario)
+            )
+        ];
+
+        // Consulta 2: productos
+        const productosBD = await posDao.obtenerProductosPorIds(idsProductos);
+
+        const productosMap = new Map(
+            productosBD.map(p => [p.id, p])
+        );
+
+        // Consulta 3: usuarios
+        const usuariosBD = await posDao.obtenerUsuariosPorCodigos(codigosUsuarios);
+
+        const usuariosMap = new Map(
+            usuariosBD.map(u => [u.cod_usuario, u.nombre])
+        );
+
+        // Construir respuesta
+        const movimientosAcumulados = movimientosParseados.map(movimiento => ({
+            ...movimiento,
+            usuario: movimiento.usuario || usuariosMap.get(movimiento.id_usuario) || null,
+            productos: movimiento.productos.map((producto: any) => {
+                const detalle = productosMap.get(producto.id);
+
+                return {
                     id: producto.id,
-                    codigo: productoDetalle[0].codigo,
-                    descripcion: productoDetalle[0].descripcion,
-                    talla:productoDetalle[0].talla,
+                    codigo: detalle?.codigo,
+                    descripcion: detalle?.descripcion,
+                    talla: detalle?.talla,
                     stock_actual: producto.cantidad,
-                    cantidad: producto.cantidad_mod,
-                }
-
-                produtosAux.push(productoAux)
-            }
-
-            let movimientoAux = {
-                ...movimiento,
-                usuario: usuarioNombre,
-                productos: produtosAux
-            }
-
-            movimientosAcumulados.push(movimientoAux)
-
-        }
-
+                    cantidad: producto.cantidad_mod
+                };
+            })
+        }));
 
         res.send({
             error: 0,
@@ -1494,7 +1514,7 @@ export const imagenesProducto = async (req: any, res: Response) => {
         const imagenes = await posDao.obtenerImagenesProducto(codigo)
         res.send({
             error: 0,
-            imagenes:imagenes.map((imagen)=>imagen.url)
+            imagenes: imagenes.map((imagen) => imagen.url)
         })
 
     } catch (e: any) {

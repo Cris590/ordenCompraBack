@@ -586,3 +586,26 @@ export const obtenerImagenesProducto =  async (codigo:string) => {
     )
     .where('p.codigo', codigo);
 }
+
+
+
+export const obtenerProductosPorIds = async (ids: number[]) => {
+    if (!ids.length) return [];
+
+    return await dbCrm('productos')
+        .select(
+            'id',
+            'codigo',
+            'descripcion',
+            'talla'
+        )
+        .whereIn('id', ids);
+};
+
+export const obtenerUsuariosPorCodigos = async (codigos: number[]) => {
+    if (!codigos.length) return [];
+
+    return await db('usuario')
+        .select('cod_usuario', 'nombre')
+        .whereIn('cod_usuario', codigos);
+};
