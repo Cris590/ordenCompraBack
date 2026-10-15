@@ -13,6 +13,7 @@ import * as posDao from '../databases/pos'
 import * as ecommerceIntegration from './ecommerce/_index'
 
 import { parseJson } from '../utils/parseJson';
+import { IFiltrosRedencionBonosTienda } from '../interfaces/entidad';
 
 
 export const consultarBonos = async (req: Request, res: Response) => {
@@ -385,6 +386,125 @@ export const redimirBonosTienda = async (req: any, res: Response) => {
             msg: {
                 icon: 'error',
                 text: 'Error al consultar las usuarios bonos'
+            }
+        })
+    }
+
+}
+
+export const obtenerBonosRedimidosTienda = async (req: any, res: Response) => {
+    try {
+        const codUsuario = req.auth.user.cod_usuario;
+        const codPerfil = req.auth.user.cod_perfil;
+        const filtros = req.body as IFiltrosRedencionBonosTienda
+
+        const perfilesValidosRes = await generalService.getTableInformation('variable', 'nombre', 'PERFILES_BUSQUEDA_VENTAS_POS');
+        const perfilesValidos = JSON.parse(perfilesValidosRes[0].valor)
+
+        if (!perfilesValidos.includes(+codPerfil)) {
+            return res.send({
+                error: 1,
+                msg: {
+                    icon: 'error',
+                    text: 'El usuario no tiene permisos para ver las ventas.'
+                }
+            })
+        }
+
+
+        // Si es vendedor validar su existencia, configuracion y su perfil
+        if (codPerfil == 8) {
+            const infoVendedor = await generalService.getTableInformation('vendedor', 'cod_usuario', codUsuario)
+            if (infoVendedor.length == 0) {
+                return res.send({
+                    error: 1,
+                    msg: {
+                        icon: 'error',
+                        text: 'El usuario no tiene permisos ver las ventas'
+                    }
+                })
+            } else {
+                filtros.id_tienda = infoVendedor[0].id_bodega
+            }
+        }
+
+        const bodegas = await generalService.getTableInformationCrm('bodegas')
+        const bonosRedimidos = await entidadBonosDao.obtenerBonosRedimidosTienda(filtros)
+
+        let bonosModificados:any[] = []
+
+        for (const bono of bonosRedimidos) {
+          
+            bonosModificados.push({
+                ...bono,
+                tienda: bodegas.filter((bodega)=>bodega.id == bono.id_tienda)[0].nombre,
+                total_productos: parseJson(bono.productos).length,
+                total_bonos: parseJson(bono.bonos).length
+            })
+        }
+
+        res.send({
+            error: 0,
+            bonosRedimidos:bonosModificados
+        })
+
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al obtener productos'
+            }
+        })
+    }
+
+}
+
+
+export const obtenerBonoRedimidoDetalle = async (req: any, res: Response) => {
+    try {
+        const codRedencionBono = req.params.cod_redencion_bono_tienda;
+
+        let bonoDetalle = await entidadBonosDao.obtenerDetalleBonoRedimido(codRedencionBono)
+        const bodegas = await generalService.getTableInformationCrm('bodegas')
+
+        bonoDetalle.productos = parseJson(bonoDetalle.productos)
+        bonoDetalle.metodos_pago = parseJson(bonoDetalle.metodos_pago)
+        bonoDetalle.tienda = bodegas.filter((bodega)=>bodega.id == bonoDetalle.id_tienda)[0].nombre
+
+        bonoDetalle.total_productos = bonoDetalle.productos.length
+
+        let bonos:any[]=[]
+        for (const bonoRedimido of parseJson(bonoDetalle.bonos)) {
+            const bonoEntrega = await entidadBonosDao.infoBonoEntregado(bonoRedimido.cod_usuario_bono_entrega)
+            bonos.push({
+                ...bonoEntrega,
+                ...bonoRedimido
+            })
+
+            console.log('.... Bono',bonos)
+        }
+        bonoDetalle.bonos = bonos
+        
+        let usuarios = await entidadBonosDao.codigosUsuarioBonoEntrega(parseJson(bonoDetalle.cod_usuarios))
+        bonoDetalle.usuarios = usuarios
+        delete bonoDetalle.cod_usuarios
+        
+        res.send({
+            error: 0,
+            bonoDetalle
+        })
+
+    } catch (e: any) {
+        console.log('***********')
+        console.log(e)
+        res.send({
+            error: 1,
+            msg: {
+                icon: 'error',
+                text: 'Error al obtener productos'
             }
         })
     }

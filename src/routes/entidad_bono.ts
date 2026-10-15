@@ -15,3 +15,5 @@ router.get('/consultar_entidades/', entidadBonoService.consultarEntidadesEntrega
 router.get('/buscar_bonos_cedula/:documento', entidadBonoService.buscarBonosCedula);
 router.post('/obtener_bonos_usuario_redencion', entidadBonoService.obtenerBonosUsuarioRedencion);
 router.post('/redimir_bonos_tienda', entidadBonoService.redimirBonosTienda);
+router.post('/bonos_redimidos_tienda', entidadBonoService.obtenerBonosRedimidosTienda);
+router.get('/bonos_redimidos_detalle/:cod_redencion_bono_tienda', entidadBonoService.obtenerBonoRedimidoDetalle);

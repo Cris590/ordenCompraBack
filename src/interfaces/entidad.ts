@@ -34,3 +34,10 @@ export interface IUsuarioCarga {
     password: string,
     codigo:string
 }
+
+export interface IFiltrosRedencionBonosTienda{
+  id_tienda: string;
+  fecha_inicial: string;
+  fecha_final: string;
+  documento_cliente: string;
+}

@@ -3,7 +3,7 @@ import Knex from 'knex';
 import config from '../../knexfile';
 import { logDatabasePYS } from '../helpers/logger';
 import * as formatMessages from '../helpers/formatLogMessages';
-import { IEntidadInfoBasica, IEntidadResumen, IUsuarioEntidad } from '../interfaces/entidad';
+import { IEntidadInfoBasica, IEntidadResumen, IFiltrosRedencionBonosTienda, IUsuarioEntidad } from '../interfaces/entidad';
 
 const db = Knex(config.development);
 
@@ -115,12 +115,12 @@ export const getBonosUsuario = async (documento: string) => {
 
 export const getUsuarioBonoEntregaAgrupado = (codUsuarios: number[]) => {
     return db
-        .select('ube.*','u.codigo','cbp.nombre as producto_cargo','cbp.valor')
+        .select('ube.*', 'u.codigo', 'cbp.nombre as producto_cargo', 'cbp.valor')
         .from('usuario_bono_entrega as ube')
         .join('usuario as u', 'u.cod_usuario', 'ube.cod_usuario')
         .join(
             'cargo_bonos_producto AS cbp',
-                db.raw(`
+            db.raw(`
                 JSON_UNQUOTE(
                     JSON_EXTRACT(
                         ube.data_entrega,
@@ -147,7 +147,7 @@ export const getBonosUsuarioRedencion = async (codUsuarios: number[]) => {
         .from('usuario_bono_entrega AS ube')
         .join(
             'cargo_bonos_producto AS cbp',
-                db.raw(`
+            db.raw(`
                 JSON_UNQUOTE(
                     JSON_EXTRACT(
                         ube.data_entrega,
@@ -173,19 +173,19 @@ export const getBonosUsuarioRedencion = async (codUsuarios: number[]) => {
 
 export const geInfoClienteRendecion = async (codUsuario: number) => {
     return await db
-    .select(
-        'u.cedula as documento',
-        'u.nombre',
-        'e.nombre as entidad',
-        'e.cod_entidad',
-        'e.no_contrato',
-        'e.fecha_inicio',
-        'e.fecha_final'
-    )
-    .from('usuario as u')
-    .join('entidad as e', 'u.cod_entidad', 'e.cod_entidad')
-    .where('u.cod_usuario', codUsuario)
-    .first();
+        .select(
+            'u.cedula as documento',
+            'u.nombre',
+            'e.nombre as entidad',
+            'e.cod_entidad',
+            'e.no_contrato',
+            'e.fecha_inicio',
+            'e.fecha_final'
+        )
+        .from('usuario as u')
+        .join('entidad as e', 'u.cod_entidad', 'e.cod_entidad')
+        .where('u.cod_usuario', codUsuario)
+        .first();
 }
 
 
@@ -193,7 +193,7 @@ export const crearRedencionVenta = async (redencion: any) => {
     return db('redencion_bono_tienda').insert(redencion);
 }
 
-export const getEntidadesReportesPorUsuario = async ( codUsuario: number,buscarTienda?: boolean) => {
+export const getEntidadesReportesPorUsuario = async (codUsuario: number, buscarTienda?: boolean) => {
     return await db('usuario_bono_entrega as ube')
         .distinct('ube.cod_entidad', 'e.nombre')
         .join('entidad as e', 'ube.cod_entidad', 'e.cod_entidad')
@@ -221,19 +221,19 @@ export const getEntidadesReportesPorUsuario = async ( codUsuario: number,buscarT
                                 ) = 1`
                             );
                     })
-                    // No existe id_tienda: mantener el filtro original.
-                    .orWhere(function () {
-                        this.whereRaw(
-                            `JSON_CONTAINS_PATH(
+                        // No existe id_tienda: mantener el filtro original.
+                        .orWhere(function () {
+                            this.whereRaw(
+                                `JSON_CONTAINS_PATH(
                                 ube.data_entrega,
                                 'one',
                                 '$.id_tienda'
                             ) = 0`
-                        ).andWhereRaw(
-                            "JSON_EXTRACT(ube.data_entrega, '$.cod_usuario') = ?",
-                            [codUsuario]
-                        );
-                    });
+                            ).andWhereRaw(
+                                "JSON_EXTRACT(ube.data_entrega, '$.cod_usuario') = ?",
+                                [codUsuario]
+                            );
+                        });
                 });
             } else {
                 query.andWhereRaw(
@@ -243,3 +243,122 @@ export const getEntidadesReportesPorUsuario = async ( codUsuario: number,buscarT
             }
         });
 };
+
+export const obtenerBonosRedimidosTienda = async (
+    filtros: IFiltrosRedencionBonosTienda
+) => {
+    return db
+        .select(
+            'rbt.cod_redencion_bono_tienda',
+            'rbt.bonos',
+            'rbt.metodos_pago',
+            'rbt.productos',
+            'rbt.subtotal',
+            'rbt.descuento',
+            'rbt.total_pagado',
+            'u.cedula as documento_usuario',
+            'u.nombre as nombre_usuario',
+            'u2.cedula as documento_cliente',
+            'u2.nombre as nombre_cliente',
+            'rbt.fecha_creacion',
+            'rbt.id_tienda'
+        )
+        .from('redencion_bono_tienda as rbt')
+        .join('usuario as u', 'u.cod_usuario', 'rbt.cod_usuario')
+        .leftJoin('usuario as u2', function () {
+            this.on(
+                'u2.cod_usuario',
+                '=',
+                db.raw(`(
+                    SELECT u3.cod_usuario
+                    FROM usuario AS u3
+                    WHERE u3.cedula = rbt.documento
+                    ORDER BY u3.cod_usuario DESC
+                    LIMIT 1
+                )`)
+            );
+        })
+        .where("rbt.id_tienda",filtros.id_tienda)
+        .modify((query) => {
+            if (filtros.documento_cliente) {
+                query.where('rbt.documento',filtros.documento_cliente);
+            } else {
+                if (filtros.fecha_inicial) {
+                    query.where('rbt.fecha_creacion','>=',`${filtros.fecha_inicial} 00:00:00`);
+                }
+
+                if (filtros.fecha_final) {
+                    query.where('rbt.fecha_creacion','<=',`${filtros.fecha_final} 23:59:59`);
+                }
+            }
+        })
+        .orderBy('rbt.fecha_creacion', 'desc');
+};
+
+
+export const obtenerDetalleBonoRedimido = (codRedencionBono: number) => {
+    return db
+        .select(
+            'rbt.*',
+            'u.cedula as documento_usuario',
+            'u.nombre as nombre_usuario',
+            'u2.cedula as documento_cliente',
+            'u2.nombre as nombre_cliente',
+             'e.nombre as entidad',
+            'e.no_contrato',
+            'e.nit'
+        )
+        .from('redencion_bono_tienda as rbt')
+        .join('usuario as u', 'u.cod_usuario', 'rbt.cod_usuario')
+        .leftJoin('usuario as u2', function () {
+            this.on(
+                'u2.cod_usuario',
+                '=',
+                db.raw(`(
+                    SELECT u3.cod_usuario
+                    FROM usuario AS u3
+                    WHERE u3.cedula = rbt.documento
+                    ORDER BY u3.cod_usuario DESC
+                    LIMIT 1
+                )`)
+            );
+        })
+        .join('entidad AS e','e.cod_entidad','u2.cod_entidad')
+        .where("rbt.cod_redencion_bono_tienda",codRedencionBono)
+        .first();
+}
+
+
+export const infoBonoEntregado = async (codUsuarioBonoEntrega:number)=>{
+    return db
+        .select(
+            'ube.cod_usuario_bono_entrega',
+            'cbp.cod_cargo_entidad',
+            'cbp.nombre as cargo_bono_producto',
+            'cbp.descripcion as descripcion_bono_producto',
+            'ce.nombre as cargo_entidad',
+            'cbp.nombre',
+            'cbp.descripcion',
+            'cbp.valor'
+        )
+        .from('usuario_bono_entrega AS ube')
+        .join(
+            'cargo_bonos_producto AS cbp',
+            db.raw(`JSON_UNQUOTE(JSON_EXTRACT(ube.data_entrega, '$.cod_cargo_bonos_producto')) = cbp.cod_cargo_bonos_producto`)
+        )
+        .join('cargo_entidad AS ce','cbp.cod_cargo_entidad','ce.cod_cargo_entidad')
+        .join('usuario AS u','ube.cod_usuario','u.cod_usuario')
+        .where('ube.cod_usuario_bono_entrega', codUsuarioBonoEntrega)
+        .first()
+}
+
+
+export const codigosUsuarioBonoEntrega = async (codUsuario:number[])=>{
+    return db
+        .select(
+            'codigo'
+        )
+        .from('usuario')
+        .whereIn('cod_usuario', codUsuario)
+}
+
