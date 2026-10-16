@@ -153,8 +153,8 @@ export const obtenerReporteBonosRedimidos = (
         .leftJoin('usuario as u', function () {
             this.on('u.cod_usuario','=',db.raw(`JSON_UNQUOTE(JSON_EXTRACT(ube.data_entrega, '$.cod_usuario'))`));
         })
-        .leftJoin('entidad as e', 'u.cod_entidad', 'e.cod_entidad')
         .leftJoin('usuario as u2', 'u2.cod_usuario', 'ube.cod_usuario')
+        .leftJoin('entidad as e', 'u2.cod_entidad', 'e.cod_entidad')
         .leftJoin('cargo_bonos_producto as cbp', function () {
             this.on('cbp.cod_cargo_bonos_producto','=', db.raw(`JSON_UNQUOTE(JSON_EXTRACT(ube.data_entrega, '$.cod_cargo_bonos_producto'))`));
         })
