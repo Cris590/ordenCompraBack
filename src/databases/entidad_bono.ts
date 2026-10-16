@@ -260,7 +260,7 @@ export const obtenerBonosRedimidosTienda = async (
             'u.nombre as nombre_usuario',
             'u2.cedula as documento_cliente',
             'u2.nombre as nombre_cliente',
-            'rbt.fecha_creacion',
+            db.raw('DATE_SUB(rbt.fecha_creacion, INTERVAL 5 HOUR) as fecha_creacion'),
             'rbt.id_tienda'
         )
         .from('redencion_bono_tienda as rbt')
@@ -284,11 +284,13 @@ export const obtenerBonosRedimidosTienda = async (
                 query.where('rbt.documento',filtros.documento_cliente);
             } else {
                 if (filtros.fecha_inicial) {
-                    query.where('rbt.fecha_creacion','>=',`${filtros.fecha_inicial} 00:00:00`);
+                    query.where('rbt.fecha_creacion','>=',db.raw('DATE_ADD(?, INTERVAL 5 HOUR)',[`${filtros.fecha_inicial} 00:00:00`]) );
+            
                 }
 
                 if (filtros.fecha_final) {
-                    query.where('rbt.fecha_creacion','<=',`${filtros.fecha_final} 23:59:59`);
+                    query.where('rbt.fecha_creacion','<=', db.raw('DATE_ADD(?, INTERVAL 5 HOUR)', [`${filtros.fecha_final} 23:59:59`]) );
+            
                 }
             }
         })
@@ -300,6 +302,7 @@ export const obtenerDetalleBonoRedimido = (codRedencionBono: number) => {
     return db
         .select(
             'rbt.*',
+            db.raw('DATE_SUB(rbt.fecha_creacion, INTERVAL 5 HOUR) as fecha_creacion'),
             'u.cedula as documento_usuario',
             'u.nombre as nombre_usuario',
             'u2.cedula as documento_cliente',
