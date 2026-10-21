@@ -257,7 +257,8 @@ export const obtenerReporteBonosRedimidosTotalEntidad = (codEntidad: number): Pr
             'cbp.valor',
             'cbp.descripcion',
             'e.nombre as entidad',
-            'e.no_contrato'
+            'e.no_contrato',
+            'ce.lote'
         )
 
         // Usuario que redimió el bono
@@ -265,55 +266,34 @@ export const obtenerReporteBonosRedimidosTotalEntidad = (codEntidad: number): Pr
             this.on(
                 'u.cod_usuario',
                 '=',
-                db.raw(`
-                    JSON_UNQUOTE(
-                        JSON_EXTRACT(
-                            ube.data_entrega,
-                            '$.cod_usuario'
-                        )
-                    )
-                `)
+                db.raw(`JSON_UNQUOTE( JSON_EXTRACT(ube.data_entrega,'$.cod_usuario'))`)
             );
         })
 
         // La entidad sale directamente de ube
-        .join(
-            'entidad as e',
-            'e.cod_entidad',
-            'ube.cod_entidad'
-        )
-
+        .join('entidad as e','e.cod_entidad','ube.cod_entidad')
         // Usuario dueño del bono
-        .join(
-            'usuario as u2',
-            'u2.cod_usuario',
-            'ube.cod_usuario'
-        )
+        .join('usuario as u2','u2.cod_usuario','ube.cod_usuario')
 
         // Producto/cargo del bono
         .join('cargo_bonos_producto as cbp', function () {
             this.on(
                 'cbp.cod_cargo_bonos_producto',
                 '=',
-                db.raw(`
-                    JSON_UNQUOTE(
-                        JSON_EXTRACT(
-                            ube.data_entrega,
-                            '$.cod_cargo_bonos_producto'
-                        )
-                    )
-                `)
+                db.raw(`JSON_UNQUOTE( JSON_EXTRACT( ube.data_entrega,'$.cod_cargo_bonos_producto') )`)
             );
         })
+        .join('cargo_entidad as ce','cbp.cod_cargo_entidad','ce.cod_cargo_entidad')
         .where('ube.cod_entidad', codEntidad)
         .orderByRaw(`
             CASE
-                WHEN JSON_UNQUOTE(
-                    JSON_EXTRACT(ube.data_entrega, '$.redimido')
-                ) = '0'
+                WHEN JSON_UNQUOTE( JSON_EXTRACT(ube.data_entrega, '$.redimido') ) = '0'
                 THEN 0
                 ELSE 1
             END
         `)
-        .orderBy('fecha_redimido', 'asc').orderBy('u2.nombre', 'asc')
+        .orderBy('fecha_redimido', 'asc')
+        .orderBy('ce.lote', 'asc')
+        .orderBy('u2.nombre', 'asc')
+        .orderBy('u2.cedula', 'asc')
 };
