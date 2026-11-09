@@ -107,12 +107,14 @@ export const getUsuariosIdentidad = (
                 CONCAT(c.nombre, ' - LOTE ', c.lote) AS cargo_entidad
             `),
             db.raw(`
-                NOT EXISTS (
-                    SELECT 1
-                    FROM usuario_bono_entrega AS ube
-                    WHERE ube.cod_usuario = u.cod_usuario
-                      AND JSON_EXTRACT(ube.data_entrega, '$.redimido') = 0
-                ) AS redimido
+                ${cod_perfil === 5 ? `
+                    NOT EXISTS (
+                        SELECT 1
+                        FROM usuario_bono_entrega AS ube
+                        WHERE ube.cod_usuario = u.cod_usuario
+                        AND JSON_EXTRACT(ube.data_entrega, '$.redimido') = 0
+                    )
+                ` : 'IF(o.cod_orden IS NOT NULL, 1, 0)'} AS redimido
             `)
         )
         .from('usuario as u')
